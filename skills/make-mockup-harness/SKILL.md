@@ -2,7 +2,7 @@
 name: make-mockup-harness
 description: 以 orchestrator 帶領 SA 從需求到可互動 Mockup 的全流程：Story Board（make-storyboard）→ Design Brief → 依 brief 製作互動 HTML 並發布成 artifact → 凍結版本 → storyboard 與 mockup 一致性檢核 → 回饋回寫升版。當使用者要「做需求 mockup」、「把需求變成可展示的畫面」、「繼續／續跑 mockup 流程」、「凍結／匯出 mockup」、「記錄這次需求變更動到哪些畫面」，或 mockup 定稿後要「交接 SDD」「打包給 sdd-harness 開發」時使用。
 argument-hint: "[需求描述 | resume]"
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, ToolSearch, Skill, Artifact, ArtifactComments, mcp__claude-in-chrome__*
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, ToolSearch, Skill, Agent, Artifact, ArtifactComments, mcp__claude-in-chrome__*
 ---
 
 # Make Mockup Harness：需求到互動 Mockup 的 orchestrator
@@ -47,6 +47,8 @@ storyboard 是唯一權威；mockup 是 storyboard 的呈現，由你依 brief �
 1. **storyboard 唯一權威**：任何來自迭代對話、artifact 留言或客戶的**規則、範圍、狀態**變更，先寫進
    storyboard 的「變更紀錄」與對應 User Story，再改 mockup 或產新 brief。不得直接改 mockup 了事；
    純呈現（版面、配色、文案措辭）可在步驟 3 直接改。
+   v<N> mockup 尚未凍結前發現 storyboard 有誤（例如查證後事實不符），可在 v<N> 內更正，
+   變更紀錄 v<N> 列的摘要補註更正內容並另立 commit，不必升版。
 2. **凍結規則**：`make-mockups/<slug>/mockups/v<N>/` 一旦 commit 不得修改；新需求一律升版。
 3. **context 紀律**：mockup 檔不整份 Read。用 `scripts/extract-screens.sh`（看 `data-page` 與 `KEYWORDS`）
    或 `grep -o -m` 限量取證；互動在 `serve-mockup.sh` 本機開啟的凍結版上驗。
@@ -97,6 +99,7 @@ git -C "$TOP" status --porcelain | grep -v -e "^.. ${ROOT#$TOP/}/" -e '^.. \.mak
 - 產出寫到 `make-mockups/<slug>/storyboard.md`，User Story 以 `US-nn` 編號。
   「變更紀錄」第一列即 v1，摘要「初版」。
 - 閘門：把 `US-nn` 清單與一句話摘要給使用者，AskUserQuestion 確認「通過／需修改」。
+  你為畫面行為補上、討論中沒有明講的規則，要在閘門前逐條列出請使用者特別看。
 - 完成準則見 workflow-stages.md §1。commit：`storyboard(<slug>): 初版 [v1]`。
 
 ## 步驟 2：Design Brief
@@ -105,6 +108,8 @@ git -C "$TOP" status --porcelain | grep -v -e "^.. ${ROOT#$TOP/}/" -e '^.. \.mak
 - 從 storyboard 的每個 `US-nn` 推導：畫面、每個畫面的狀態、角色切換、假資料、
   跳轉關係；「規則」轉成畫面行為，「狀態」的優先序轉成標籤規則，「範圍」的不涵蓋項轉成
   排除清單，「展示情境」轉成頁面順序與假資料腳本，「使用者角色」轉成展示列的角色選項。
+- **假資料涉及真實世界事實**（作品、法規、產品規格等）時，派研究 subagent 查證並附來源，
+  查證結果與 storyboard 衝突時依通用規則 1 處理；未查證的欄位在 brief 標註。
 - 升版時（N ≥ 2）：brief 開頭要有「本版異動」段落，內容直接取自步驟 6 升版模式輸出的
   「本版異動清單」，只描述相對上一版的差異，步驟 3 據此做增量修改而不是重做。
 - 使用者指名設計系統時，依序找來源：repo 內的 tokens／theme 檔或 CLAUDE.md →
