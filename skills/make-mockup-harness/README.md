@@ -24,7 +24,7 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 | `references/workflow-stages.md` | 各階段完成準則、狀態檔 schema、續跑規則 |
 | `references/design-brief.template.md` | 貼進 Claude Design 的 brief 模板 |
 | `references/claude-design-handoff.md` | Chrome 操作程序、Claude Design 專案 API、實測踩過的坑、手動後備 |
-| `references/consistency-check.md` | 一致性檢核程序、操作驗證、四類報告格式 |
+| `references/consistency-check.md` | 一致性檢核程序、操作驗證、五類報告格式 |
 | `references/revisions.template.md` | 版本 ↔ 回饋 ↔ User Story ↔ 畫面 對照表 |
 | `references/sdd-handoff.md` | 步驟 7 交接 SDD：前提、截圖、sdd-input、PM 補答、開發回寫 |
 | `references/sdd-handoff-templates/` | 交接包範本：`spec-source-template.md`（spec 規格來源段）、`sdd-source-instructions.template.md`（sdd-harness 各階段補充指示）、`sdd-input.template.md`、`sdd-start.template.md`（開發者啟動說明） |

@@ -21,7 +21,7 @@ storyboard 是唯一權威；Claude Design 只是製作工具；每個 mockup �
     ——步驟 1 與步驟 6 以 Read-照做方式 inline 執行
   - `references/design-brief.template.md`：brief 模板——步驟 2 讀
   - `references/claude-design-handoff.md`：Chrome 操作與 Claude Design 專案 API 程序——步驟 3、4 讀
-  - `references/consistency-check.md`：檢核程序與四類報告格式——步驟 5 讀
+  - `references/consistency-check.md`：檢核程序與五類報告格式——步驟 5 讀
   - `references/revisions.template.md`：版本對照表——步驟 6 第一次讀
   - `references/sdd-handoff.md`：交接 SDD 的前提、程序、開發回寫——步驟 7 讀；
     範本在 `references/sdd-handoff-templates/`，由 script 代入，不必讀
@@ -36,7 +36,7 @@ storyboard 是唯一權威；Claude Design 只是製作工具；每個 mockup �
 | 2 | Design Brief | 由 storyboard 推導畫面、角色、狀態、假資料 | 使用者確認 brief | ✅ |
 | 3 | 交接 Claude Design | Chrome 開專案、貼 brief、送出；SA 自行迭代 | 送出前確認（耗用額度） | — |
 | 4 | 匯出凍結 | 要求產單檔版 → GetFile → 下載 → 歸檔 → 取留言 | 下載前確認 | ✅ |
-| 5 | 一致性檢核 | storyboard 對照 mockup，產四類報告 | 待決定項目請使用者裁決；選擇升版或交接 | ✅ → 步驟 6 或 7 |
+| 5 | 一致性檢核 | storyboard 對照 mockup，產五類報告 | 待決定項目請使用者裁決；選擇升版或交接 | ✅ → 步驟 6 或 7 |
 | 6 | 回饋回寫 | 以 `make-storyboard` 升版模式寫回 storyboard，更新 revisions.md | 逐條確認歸類 | ✅ → 回步驟 2 |
 | 7 | 交接 SDD（選配） | 打包成開發 repo 的 `.specify/context/` 結構＋`SDD-START.md`，截圖、填 sdd-input.md、PM 補答 | 前提檢查、PM 答案填齊 | ✅ 本版鎖定 |
 
@@ -46,7 +46,8 @@ storyboard 是唯一權威；Claude Design 只是製作工具；每個 mockup �
    storyboard 的「變更紀錄」與對應 User Story，再產新 brief。不得直接改 mockup 了事。
 2. **凍結規則**：`make-mockups/<slug>/mockups/v<N>/` 一旦 commit 不得修改；新需求一律升版。
 3. **context 紀律**：單檔 HTML 通常數百 KB，**永遠不要整份 Read**。
-   用 `scripts/extract-screens.sh` 取畫面清單，必要時用 `grep -o -m` 限量查關鍵字。
+   用 `scripts/extract-screens.sh`（帶 `KEYWORDS`）或 `grep -o -m` 限量取證；頁面清單與互動
+   改在 `serve-mockup.sh` 本機開啟的凍結版上看。
    Claude Design 專案 API 的回傳只保留檔名、大小、版本與雜湊，不把內容帶進對話。
 4. **Chrome 操作的授權邊界**：
    - 在 Claude Design 送出任何對話（貼 brief、要求匯出）會耗用使用者額度，**每次送出前用
@@ -131,12 +132,12 @@ commit：`mockup(<slug>): freeze v<N>`。
 ## 步驟 5：一致性檢核
 
 讀 `references/consistency-check.md`，產出 `make-mockups/<slug>/reviews/v<N>-consistency.md`，
-四類：一致／規格需修正／mockup 已有但規格未寫／待決定。
+五類：一致／規格需修正／mockup 已有但規格未寫／規格有但 mockup 缺漏／待決定，另附操作驗證。
 「待決定」逐題用 AskUserQuestion 請使用者裁決，答案記在報告的「裁決」欄。
 commit：`review(<slug>): v<N> consistency`。
 
 收尾分流（AskUserQuestion）：
-- 報告的「規格需修正」「mockup 已有但規格未寫」「規格有但 mockup 缺漏」皆為「無」或裁決為不改、
+- 報告的「規格需修正」「mockup 已有但規格未寫」「規格有但 mockup 缺漏」皆為「無」或使用者確認不改、
   且沒有待處理的客戶回饋 → 可選「交接 SDD」，直接以 v<N> 進步驟 7。
 - 其餘情況，或使用者選擇繼續迭代 → 步驟 6 升版。
 - 交接只能交「已完成步驟 5 的版本」：升版後的 v<N+1> 要再走完步驟 2–5 才能交接。

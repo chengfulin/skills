@@ -66,7 +66,7 @@
 - 狀態檔 `stage: export`。
 
 ### §5 一致性檢核
-- `reviews/v<N>-consistency.md` 存在，四個分類段落皆在（可為「無」）。
+- `reviews/v<N>-consistency.md` 存在，五個分類段落與「操作驗證」段皆在（可為「無」）。
 - 「待決定」每題都有「裁決」欄，值為使用者答案或「延後」。
 - 狀態檔 `stage: review`。
 

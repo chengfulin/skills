@@ -1,6 +1,6 @@
 # 一致性檢核：storyboard 對照 mockup
 
-目的：把「規格 vs mockup」的核對變成可重複的程序，產出四類報告，並把「待決定」送回
+目的：把「規格 vs mockup」的核對變成可重複的程序，產出五類報告，並把「待決定」送回
 storyboard。報告路徑：`make-mockups/<slug>/reviews/v<N>-consistency.md`。
 
 ## 輸入
@@ -12,9 +12,10 @@ storyboard。報告路徑：`make-mockups/<slug>/reviews/v<N>-consistency.md`。
 ## 程序
 
 1. **畫面盤點**
-   `bash $SKILL_DIR/scripts/extract-screens.sh make-mockups/<slug>/mockups/v<N>/index.html`
-   取得 mockup 內的頁面／標題／導覽項清單。對照 brief 的畫面清單：
-   brief 有、mockup 無 → 缺漏；mockup 有、brief 無 → 多出。
+   單檔版把畫面打包成 JS 字串，靜態抽不出頁面清單，改以兩種方式取證：
+   `KEYWORDS='<brief 各 S<n> 畫面名>|<導覽項文字>' bash $SKILL_DIR/scripts/extract-screens.sh <mockup 根>/<slug>/mockups/v<N>/index.html`
+   看各畫面名是否出現；再於步驟 4 開啟的本機頁面以 `find`／`read_page` 列出實際可切換的頁面。
+   對照 brief 的畫面清單：brief 有、mockup 無 → 缺漏；mockup 有、brief 無 → 多出。
 2. **規則逐條核對**
    對 storyboard 每個 `US-nn` 的每條「規則」與「驗收條件」的 Then，挑 1 到 3 個關鍵字
    （狀態名稱、按鈕文字、欄位名、提示文字），以限量 grep 取證：
