@@ -18,6 +18,8 @@
 | Skill | 說明 |
 | --- | --- |
 | [git-commit](skills/git-commit/) | 依 Angular 格式與繁體中文規範整理變更並建立 git commit |
+| [make-mockup-harness](skills/make-mockup-harness/) | 以 orchestrator 帶 SA 從需求走到可互動 Mockup：Story Board → Design Brief → 互動 mockup（artifact）→ 凍結版本 → 一致性檢核 → 升版，可選交接 SDD |
+| [make-storyboard](skills/make-storyboard/) | 以主任 SA 視角帶 junior SA 釐清需求，產出可直接轉成互動 Mockup 的 Story Board，支援依回饋升版 |
 | [tech-mentor](skills/tech-mentor/) | 以資深工程師帶 junior 的視角，將技術主題整理成由概念到細節的分層 HTML 教學頁 |
 
 ## 安裝
