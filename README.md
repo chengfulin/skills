@@ -8,6 +8,9 @@
 .
 ├── skills/          # Skill 定義，每個 skill 一個資料夾，內含 SKILL.md
 │   ├── git-commit/
+│   ├── make-mockup-harness/
+│   ├── make-storyboard/
+│   ├── sdd-baseline/
 │   └── tech-mentor/
 ├── agents/          # Subagent 定義（預留）
 └── LICENSE
@@ -20,6 +23,7 @@
 | [git-commit](skills/git-commit/) | 依 Angular 格式與繁體中文規範整理變更並建立 git commit |
 | [make-mockup-harness](skills/make-mockup-harness/) | 以 orchestrator 帶 SA 從需求走到可互動 Mockup：Story Board → Design Brief → 互動 mockup（artifact）→ 凍結版本 → 一致性檢核 → 升版，可選交接 SDD |
 | [make-storyboard](skills/make-storyboard/) | 以主任 SA 視角帶 junior SA 釐清需求，產出可直接轉成互動 Mockup 的 Story Board，支援依回饋升版 |
+| [sdd-baseline](skills/sdd-baseline/) | 團隊 SDD 憲章基線的參考型 skill：SDD 開始前依專案類型、風險因子、應用類型與團隊成熟度決定風險分級、導入階段與載入文件，也可查條款、同步基線副本 |
 | [tech-mentor](skills/tech-mentor/) | 以資深工程師帶 junior 的視角，將技術主題整理成由概念到細節的分層 HTML 教學頁 |
 
 ## 安裝
