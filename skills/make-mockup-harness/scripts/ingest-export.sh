@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# 用法：ingest-export.sh <slug> <N> [來源檔路徑]
-# 把 Claude Design 匯出的單檔版 HTML 歸檔到 make-mockups/<slug>/mockups/v<N>/index.html，
-# 並寫 export.json。目標已存在即拒絕（凍結規則）。
-# 來源檔未指定時，取 ~/Downloads 內檔名含 "<slug>-v<N>"（其後非數字）的最新 .html。
+# 用法：[SOURCE_URL=<artifact 網址>] [SOURCE_VERSION=<版本 id>] ingest-export.sh <slug> <N> [來源檔路徑]
+# 把凍結的 mockup HTML 歸檔到 make-mockups/<slug>/mockups/v<N>/index.html，並寫 export.json。
+# 目標已存在即拒絕（凍結規則）。
+# 來源檔：artifact 流程傳 `Artifact read`（path: index.html）回報的存檔路徑；
+# 未指定時（舊 Claude Design 流程）取 ~/Downloads 內檔名含 "<slug>-v<N>"（其後非數字）的最新 .html。
 set -euo pipefail
 slug="${1:?slug}"; n="${2:?version}"; src="${3:-}"
 base="$(bash "$(dirname "$0")/mockup-root.sh")"
@@ -18,9 +19,11 @@ cp "$src" "$dst_dir/index.html"
 sha="$(shasum -a 256 "$dst_dir/index.html" | cut -d' ' -f1)"
 size="$(wc -c < "$dst_dir/index.html" | tr -d ' ')"
 if [[ -n "${SOURCE_VERSION:-}" ]]; then sv="\"$SOURCE_VERSION\""; else sv=null; fi
+if [[ -n "${SOURCE_URL:-}" ]]; then su="\"$SOURCE_URL\""; else su=null; fi
 cat > "$dst_dir/export.json" <<JSON
 {
   "sourceFile": "$(basename "$src")",
+  "sourceUrl": $su,
   "sourceVersion": $sv,
   "importedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "bytes": $size,

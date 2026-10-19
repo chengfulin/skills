@@ -22,7 +22,7 @@
 |---|---|---|
 | `storyboard.md` | StoryBoard v{N} 原檔（sha256 {sha_storyboard}） | 業務規則 |
 | `prototype/index.html` | Prototype v{N} 單檔 HTML（約 {proto_size}，**不得整份 Read**；以截圖、限量 grep 或本機開啟操作取證） | 呈現 |
-| `prototype/export.json` | Claude Design 匯出紀錄（含 sha256） | — |
+| `prototype/export.json` | mockup 凍結紀錄（來源 artifact 網址、版本 id、sha256） | — |
 | `prototype/screens/*.png` | 1440×900、Chrome、full-page 截圖（衍生產物） | 無獨立權威 |
 | `reference/v{N}-design-brief.md` | Design Brief v{N}：畫面 ID、假資料表、展示腳本 | 參考 |
 | `reference/v{N}-consistency.md` | v{N} 一致性檢核報告（含操作驗證） | 參考 |

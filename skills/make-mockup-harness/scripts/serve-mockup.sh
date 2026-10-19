@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 用法：serve-mockup.sh <slug> <N> [port]
-# 以本機 http server 提供凍結的單檔版 mockup，供 Chrome 以最上層文件開啟做操作驗證。
+# 以本機 http server 提供凍結的 mockup（mockups/v<N>/index.html），供 Chrome 以最上層文件開啟做操作驗證。
 # 請用 Bash 的 run_in_background 執行；結束時 kill 該 PID 或 lsof -ti:<port> | xargs kill。
 set -euo pipefail
 slug="${1:?slug}"; n="${2:?version}"; port="${3:-8765}"

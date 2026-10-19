@@ -10,7 +10,7 @@
 ## 0. 全程規則
 
 1. 規格來源目錄 `.specify/context/{slug}/v{N}/` 唯讀。要改的是 spec.md，不是來源檔。
-2. `prototype/index.html` 是 Claude Design 匯出的單檔（內嵌圖片與字型，通常數 MB），**不得整份 Read**。取證據的方式只有三種：
+2. `prototype/index.html` 是凍結的單檔 mockup（舊版由 Claude Design 匯出、可達數 MB），**不得整份 Read**。取證據的方式只有三種：
    看 `prototype/screens/` 截圖（索引在 `sdd-input.md`）、限量 grep
    （`grep -o -m 5 -E '<詞A>|<詞B>' …`）、或以本機 http server 開啟後用 Playwright／Chrome 實際操作。
 3. 權威劃分五條以 `.specify/context/_shared/spec-source-template.md` 的原文為準，
@@ -54,7 +54,7 @@
   （A 沿用專案現行／B 自 Prototype 導入），寫回 spec 規格來源段。
 - plan.md 新增「前端設計（依 Prototype v{N}）」節，內容落在 spec-kit 既有產物，不另立新檔：
   - `research.md`「設計 token」節：以 Playwright 讀 Prototype 的 computed style 萃取色彩、字級、間距、圓角
-    （Claude Design 匯出檔沒有 CSS 變數，限量 grep 只抓得到 hex，抓不到套用關係）。
+    （舊 Claude Design 匯出檔沒有 CSS 變數，限量 grep 只抓得到 hex；artifact 製作的 mockup 在 `:root` 有色彩與字型變數，可作為命名參考，但仍以 computed style 為準）。
     模式 A：對應到專案現有 token，對不到的登記偏離。模式 B：由 plan 依用途命名，不要假設 Prototype 有 token 名。
   - `contracts/ui-contracts.md`：逐畫面列「區塊順序、元件對照、逐字文案與狀態、畫面對照（S<n> → 路由 → US<k> → 截圖）、偏離」。
     **文案從 Prototype DOM 抽取**（Playwright `innerText`），不要人工轉寫；偏離回填 spec 的 D-ID。

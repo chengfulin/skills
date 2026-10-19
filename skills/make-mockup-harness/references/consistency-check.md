@@ -7,14 +7,16 @@ storyboard。報告路徑：`make-mockups/<slug>/reviews/v<N>-consistency.md`。
 - `storyboard.md`（當前版本）
 - `briefs/v<N>-design-brief.md`
 - `mockups/v<N>/index.html`——**不整份 Read**，只用下列方式取證據
-- `feedback/v<N>-comments.md`（若有）
+- `feedback/v<N>-comments.md`、`feedback/v<N>-build-notes.md`（若有）
 
 ## 程序
 
 1. **畫面盤點**
-   單檔版把畫面打包成 JS 字串，靜態抽不出頁面清單，改以兩種方式取證：
-   `KEYWORDS='<brief 各 S<n> 畫面名>|<導覽項文字>' bash $SKILL_DIR/scripts/extract-screens.sh <mockup 根>/<slug>/mockups/v<N>/index.html`
-   看各畫面名是否出現；再於步驟 4 開啟的本機頁面以 `find`／`read_page` 列出實際可切換的頁面。
+   `KEYWORDS='<狀態詞>|<按鈕文字>|<提示文案>' bash $SKILL_DIR/scripts/extract-screens.sh <mockup 根>/<slug>/mockups/v<N>/index.html`
+   「data-page」段即畫面清單（artifact 製作的 mockup 每個畫面都有 `data-page="S<n> 名稱"`）。
+   關鍵字用完整詞，「S1」這類短字串會在 JS 裡大量誤中。
+   舊專案的 Claude Design 單檔版把畫面打包成 JS 字串、沒有 `data-page`，改在步驟 4 開啟的本機頁面
+   以 `find`／`read_page` 列出實際可切換的頁面。
    對照 brief 的畫面清單：brief 有、mockup 無 → 缺漏；mockup 有、brief 無 → 多出。
 2. **規則逐條核對**
    對 storyboard 每個 `US-nn` 的每條「規則」與「驗收條件」的 Then，挑 1 到 3 個關鍵字
@@ -22,14 +24,15 @@ storyboard。報告路徑：`make-mockups/<slug>/reviews/v<N>-consistency.md`。
    `grep -o -m 5 -E '<關鍵字A>|<關鍵字B>' mockups/v<N>/index.html | sort | uniq -c`
    有證據 → 一致；無證據 → 規格有、mockup 無；證據顯示行為與規則不同 → 衝突。
 3. **反向盤點**
-   從步驟 1 的多出項與 brief「待確認」回覆，列出 mockup 已有但 storyboard 沒寫的規則。
+   從步驟 1 的多出項與 `feedback/v<N>-build-notes.md` 的「待確認」，列出 mockup 已有但 storyboard 沒寫的規則。
+   帶 `data-demo` 的展示鷹架（角色切換列）不算多出項。
 4. **操作驗證（互動行為）**
-   篩選、聯動、展開、切換這類行為在字面上取證不到，改在**凍結的單檔版**上實測：
+   篩選、聯動、展開、切換這類行為在字面上取證不到，改在**凍結的檔案**上實測（細節與實測坑見 `artifact-mockup.md` §4）：
    `bash $SKILL_DIR/scripts/serve-mockup.sh <slug> <N>`（run_in_background）→
    Chrome `navigate` 到 `http://127.0.0.1:8765/index.html`。頁面是最上層文件，
    `find` 找得到元素，`javascript_tool` 可直接 `.click()` 並讀回文字，不受視窗寬度限制；
    截圖只用來佐證外觀。每個行為記「操作 → 預期 → 實際」三欄。驗證完 kill 伺服器、關分頁。
-   這一步驗的是 repo 裡凍結的檔案，而不是 Claude Design 專案的即時狀態，兩者一致才算通過。
+   這一步驗的是 repo 裡凍結的檔案，而不是 artifact 的最新版本；凍結後 artifact 若又重新發布，以凍結檔為準。
 5. **待決定**
    凡是需要業務決策才能定案的（例如狀態優先序、刪除後資料處置、權限邊界），
    列成問題，每題給 2 到 3 個選項與建議。
@@ -46,7 +49,7 @@ storyboard。報告路徑：`make-mockups/<slug>/reviews/v<N>-consistency.md`。
 | US | 規則／驗收條件 | 證據（關鍵字／畫面） |
 |---|---|---|
 
-## 操作驗證（本機開啟凍結單檔版實測）
+## 操作驗證（本機開啟凍結檔實測）
 | 操作 | 預期 | 實際 |
 |---|---|---|
 

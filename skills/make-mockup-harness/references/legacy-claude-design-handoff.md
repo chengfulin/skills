@@ -1,4 +1,8 @@
-# Claude Design 交接與匯出程序（Chrome）
+# （舊）Claude Design 交接與匯出程序（Chrome）
+
+> **僅供舊專案收尾**：獨立的 claude.ai/design 於 **2026-12-14 關閉**，之後網址轉到 Claude、專案對話與留言刪除。
+> 只有狀態檔已有 `claudeDesign.projectUrl` 的 feature 才用本程序把進行中的版本匯出凍結；
+> 下一版起一律改走 `artifact-mockup.md`。新 feature 不要用本程序。
 
 Claude Code 無法用任何正式工具讀寫 claude.ai/design 的 mockup 專案
 （Artifact tool 拒絕該網址；DesignSync 只看得到設計系統專案）。
@@ -17,8 +21,8 @@ ToolSearch：
 - 狀態檔已有 `claudeDesign.projectUrl` → 直接用。
 - 沒有，使用者選「由 Claude Code 建立」→ `navigate` 到 `https://claude.ai/design`：
   首頁的輸入框送出第一則訊息即建立新專案。送出前依序設定（以 `find` 取 ref）：
-  模板卡「UI mockups」、設計系統下拉（未指名就點 ⊗ 清成 None；預設可能殘留上次用的設計系統）、
-  模型。貼入 brief（見 §2 的貼法）後 AskUserQuestion 確認再送。
+  模板卡「UI mockups」、設計系統下拉（未指名就點 ⊗ 清成 None；預設可能殘留上次用的設計系統，
+  ⊗ 在下拉選單搜尋列右側）、模型。選模板會在輸入框預填「Make UI mockups for」，貼 brief 前先全選刪除。貼入 brief（見 §2 的貼法）後 AskUserQuestion 確認再送。
   送出後 `location.href` 即為專案網址，`/p/<projectId>` 為 36 字元 UUID，寫進狀態檔。
 - 沒有，使用者自行建立 → AskUserQuestion 請使用者貼回網址。
 

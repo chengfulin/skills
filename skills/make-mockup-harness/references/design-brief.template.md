@@ -1,27 +1,30 @@
 # {feature} Design Brief v{N}
 
-> 給 Claude Design 的製作指示。來源：`storyboard.md` v{N}。貼入 Claude Design 對話框送出。
-> 正文只放畫面與規則；假資料多到干擾閱讀時移到附件檔，用「Add to chat」附上。
+> mockup 的製作指示。來源：`storyboard.md` v{N}。步驟 3 依本檔撰寫 `mockup-src/index.html`。
+> 正文只放畫面與規則；假資料多時放文末附表。
 
 ## 本版異動（v2 起必填，v1 刪除本段）
 - 相對 v{N-1}：{條列只描述差異，每條標明受影響畫面}
-- 請以增量方式修改既有頁面，不要重做未提及的畫面。
+- 以增量方式修改 `mockup-src/index.html`，不要重做未提及的畫面。
 
 ## 目標與情境
 {功能一句話定位，誰在什麼情境下用。取自 storyboard Introduction}
 
 ## 設計系統
 {二擇一}
-- 使用 Claude Design 預設樣式。
-- 使用設計系統「{name}」，優先採用以下元件：{元件清單，取自 DesignSync list_files}
+- 不套設計系統，依 artifact-design 規範自訂視覺。
+- 使用設計系統「{name}」（來源：{repo tokens 檔路徑或設計系統 artifact 網址}）：{色彩、字型、元件規則摘要}
 
-## 使用者角色與可切換 props
+## 視覺參考（選配）
+{使用者以 `/design` 產生的畫布連結與要沿用的元素；沒有就刪除本段}
+
+## 使用者角色與展示列
 > 角色取自 storyboard「使用者角色」表，預設角色為展示情境的第一個角色。
+> 只有一個角色時寫「單一角色，不放展示列」。
 
-| prop | 型別 | 預設 | 用途 |
-|---|---|---|---|
-| defaultRole | {role 列舉} | {預設角色} | 以不同角色檢視畫面 |
-| skipLogin | boolean | true | 展示時略過登入 |
+| 角色 | 預設 | 畫面差異 |
+|---|---|---|
+| {角色} | {是／否} | {此角色看得到／看不到什麼} |
 
 ## 畫面清單
 > 每個畫面對應至少一個 User Story；以 storyboard 的「規則」轉成畫面行為。
@@ -44,7 +47,8 @@
 ## 本階段不涵蓋
 {取自 storyboard 各 User Story 的「範圍：不涵蓋」，條列}
 
-## 給 Claude Design 的輸出要求
-- 所有畫面放在同一個 mockup 檔，以頁面切換；頁面命名用上面的 S{n} 名稱。
-- 保留「Save as standalone HTML」能力；單檔版需離線可開、包含 logo 等資源。
-- 不要自行新增 brief 未提及的功能；想到的建議請列成「待確認」回覆，不要直接做進畫面。
+## 製作要求
+- 所有畫面放在同一個 HTML 檔（`mockup-src/index.html`），每個畫面的根元素加 `data-page="S{n} {畫面名稱}"`。
+- 狀態要能實際操作，以本檔假資料驅動；多角色時頁首放展示列（容器加 `data-demo`），不另做頁面切換器。
+- 不載入外部圖片；圖示用 inline SVG 或 data URI；字型可用 Google Fonts，需有系統字型 fallback。
+- 不要自行新增 brief 未提及的功能；想到的建議列成「待確認」，不要直接做進畫面。

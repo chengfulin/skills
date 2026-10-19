@@ -6,9 +6,13 @@ f="${1:?state file}"
 python3 - "$f" <<'PY'
 import json, sys
 s = json.load(open(sys.argv[1]))
-nxt = {"init":1,"storyboard":2,"brief":3,"handoff":4,"export":5,"review":"6|7","iterate":2,"handed-off":6}
+# handoff 為舊 Claude Design 流程的階段名，續跑規則見 workflow-stages.md「舊專案」
+nxt = {"init":1,"storyboard":2,"brief":3,"mockup":"3|4","handoff":4,"export":5,"review":"6|7","iterate":2,"handed-off":6}
 stage = s.get("stage","init")
 print(f"feature={s.get('feature')} version={s.get('currentVersion')} stage={stage} next_step={nxt.get(stage,'?')}")
+m = s.get("mockup") or {}
+print(f"mockup.artifactUrl={m.get('artifactUrl')}")
 cd = s.get("claudeDesign") or {}
-print(f"claudeDesign.projectUrl={cd.get('projectUrl')}")
+if cd.get("projectUrl"):
+    print(f"legacy=claude-design projectUrl={cd.get('projectUrl')}")
 PY

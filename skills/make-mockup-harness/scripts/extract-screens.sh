@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # 用法：KEYWORDS='詞1|詞2|…' extract-screens.sh <mockup.html>
 # 以啟發式規則從單檔 mockup 抽出畫面線索，避免整份讀入 context。
-# 實測：Claude Design 單檔版把畫面打包成 JS 字串，data-page / href=# 等 DOM 線索多半抓不到，
-# 真正有用的是關鍵字計數——請用 KEYWORDS 帶入該 feature storyboard 的狀態詞、標籤文字、提示文案。
+# artifact 流程的 mockup 每個畫面都有 data-page="S<n> 名稱"，「data-page」段即畫面清單。
+# 舊 Claude Design 單檔版把畫面打包成 JS 字串，DOM 線索抓不到，只能靠關鍵字計數。
+# KEYWORDS 帶 storyboard 的狀態詞、標籤文字、提示文案，用完整詞（短字串會在 JS 裡大量誤中）。
 set -euo pipefail
 f="${1:?mockup html}"
 echo "== file =="; ls -l "$f" | awk '{print $5" bytes"}'; shasum -a 256 "$f" | cut -c1-8

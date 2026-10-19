@@ -51,7 +51,7 @@
      `npx -y playwright screenshot --browser chromium --viewport-size=1440,900 --full-page <url> <out.png>`
      只能拍預設狀態；互動後狀態寫一支短 Playwright script（click 後 `page.screenshot({fullPage:true})`）放 scratchpad 執行。
      沒有 node 環境時用 Chrome 工具 `resize_window` 1440×900 後操作並截圖，再由使用者存檔；
-     `resize_window` 在 macOS 分割／全螢幕下會回報成功但不生效（見 claude-design-handoff.md §3e-2），
+     `resize_window` 在 macOS 分割／全螢幕下會回報成功但不生效（見 artifact-mockup.md §4），
      截圖前以 `javascript_tool` 讀 `innerWidth` 確認。
    - 拍完 kill 伺服器、關分頁。
 
