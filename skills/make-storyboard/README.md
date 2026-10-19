@@ -19,7 +19,7 @@
 | `SKILL.md` | 角色設定、初版／升版流程、品質門檻 |
 | `references/storyboard.template.md` | Story Board 模板 |
 | `references/question-framework.md` | 初版模式的固定提問順序與每題的「為什麼問」 |
-| `references/example-user-story.md` | 一個寫到位的 User Story 範例，用來對齊粒度 |
+| `references/example-user-story.md` | 三個形態各異的 User Story 範例（few-shot），用來對齊粒度 |
 
 ## 單獨使用
 
