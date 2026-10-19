@@ -1,0 +1,74 @@
+# 一致性檢核：storyboard 對照 mockup
+
+目的：把「規格 vs mockup」的核對變成可重複的程序，產出四類報告，並把「待決定」送回
+storyboard。報告路徑：`make-mockups/<slug>/reviews/v<N>-consistency.md`。
+
+## 輸入
+- `storyboard.md`（當前版本）
+- `briefs/v<N>-design-brief.md`
+- `mockups/v<N>/index.html`——**不整份 Read**，只用下列方式取證據
+- `feedback/v<N>-comments.md`（若有）
+
+## 程序
+
+1. **畫面盤點**
+   `bash $SKILL_DIR/scripts/extract-screens.sh make-mockups/<slug>/mockups/v<N>/index.html`
+   取得 mockup 內的頁面／標題／導覽項清單。對照 brief 的畫面清單：
+   brief 有、mockup 無 → 缺漏；mockup 有、brief 無 → 多出。
+2. **規則逐條核對**
+   對 storyboard 每個 `US-nn` 的每條「規則」與「驗收條件」的 Then，挑 1 到 3 個關鍵字
+   （狀態名稱、按鈕文字、欄位名、提示文字），以限量 grep 取證：
+   `grep -o -m 5 -E '<關鍵字A>|<關鍵字B>' mockups/v<N>/index.html | sort | uniq -c`
+   有證據 → 一致；無證據 → 規格有、mockup 無；證據顯示行為與規則不同 → 衝突。
+3. **反向盤點**
+   從步驟 1 的多出項與 brief「待確認」回覆，列出 mockup 已有但 storyboard 沒寫的規則。
+4. **操作驗證（互動行為）**
+   篩選、聯動、展開、切換這類行為在字面上取證不到，改在**凍結的單檔版**上實測：
+   `bash $SKILL_DIR/scripts/serve-mockup.sh <slug> <N>`（run_in_background）→
+   Chrome `navigate` 到 `http://127.0.0.1:8765/index.html`。頁面是最上層文件，
+   `find` 找得到元素，`javascript_tool` 可直接 `.click()` 並讀回文字，不受視窗寬度限制；
+   截圖只用來佐證外觀。每個行為記「操作 → 預期 → 實際」三欄。驗證完 kill 伺服器、關分頁。
+   這一步驗的是 repo 裡凍結的檔案，而不是 Claude Design 專案的即時狀態，兩者一致才算通過。
+5. **待決定**
+   凡是需要業務決策才能定案的（例如狀態優先序、刪除後資料處置、權限邊界），
+   列成問題，每題給 2 到 3 個選項與建議。
+6. 用 AskUserQuestion 逐題請使用者裁決，把答案填進報告「裁決」欄。
+
+## 報告格式
+
+```markdown
+# {feature} v{N} 一致性檢核
+
+檢核日期：YYYY-MM-DD　　storyboard：v{N}　　mockup：mockups/v{N}/index.html（sha256 前 8 碼）
+
+## 一致
+| US | 規則／驗收條件 | 證據（關鍵字／畫面） |
+|---|---|---|
+
+## 操作驗證（本機開啟凍結單檔版實測）
+| 操作 | 預期 | 實際 |
+|---|---|---|
+
+## 規格需修正
+> storyboard 寫法有誤或不精確，mockup 的做法才對；要改 storyboard。
+| US | 原文 | 建議改為 | 理由 |
+|---|---|---|---|
+
+## mockup 已有但規格未寫
+> 建議補進 storyboard，或確認是否採用。
+| 畫面 | 行為 | 建議處置（採用／移除／待決定） |
+|---|---|---|
+
+## 規格有但 mockup 缺漏
+| US | 規則／畫面 | 下一版 brief 要補的指示 |
+|---|---|---|
+
+## 待決定
+| # | 問題 | 選項 | 建議 | 裁決 |
+|---|---|---|---|---|
+```
+
+## 寫回規則
+- 「規格需修正」與「待決定」的裁決 → 步驟 6 交給 `make-storyboard` 升版模式寫進對應 `US-nn`。
+- 「mockup 已有但規格未寫」裁決為採用 → 補進 storyboard 規則；裁決為移除 → 寫進下一版 brief 的「本版異動」。
+- 「規格有但 mockup 缺漏」→ 直接進下一版 brief 的「本版異動」。
