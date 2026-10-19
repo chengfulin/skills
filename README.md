@@ -7,6 +7,7 @@
 ```
 .
 ├── skills/          # Skill 定義，每個 skill 一個資料夾，內含 SKILL.md
+│   ├── git-commit/
 │   └── tech-mentor/
 ├── agents/          # Subagent 定義（預留）
 └── LICENSE
@@ -16,6 +17,7 @@
 
 | Skill | 說明 |
 | --- | --- |
+| [git-commit](skills/git-commit/) | 依 Angular 格式與繁體中文規範整理變更並建立 git commit |
 | [tech-mentor](skills/tech-mentor/) | 以資深工程師帶 junior 的視角，將技術主題整理成由概念到細節的分層 HTML 教學頁 |
 
 ## 安裝
