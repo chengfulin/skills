@@ -56,6 +56,9 @@ cp -r skills/tech-mentor /path/to/project/.claude/skills/
 2. 撰寫 `SKILL.md`，frontmatter 至少包含 `name` 與 `description`
 3. 為該 skill 補上 `README.md`，並更新本文件的「Skills 一覽」
 
-## License
+## 授權與使用說明
 
-[MIT](LICENSE)
+本 repo 是個人實驗 skill 的整理與紀錄，以 [MIT](LICENSE) 授權分享：歡迎自由取用、修改、整合進自己的專案，只需保留版權聲明。
+
+- **實驗性質**：內容會隨實驗持續調整，尚未定版，也不保證向後相容；建議複製一份到自己的環境再依需求修改。
+- **第三方來源**：改寫自他人作品的 skill，會在該 skill 的 README 註明出處與原授權，取用時請一併遵守原授權。

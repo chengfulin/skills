@@ -37,6 +37,12 @@
 - 一張 inline SVG 圖（架構圖／流程圖／時序圖，擇適合者）
 - 細節收在 `<details>` 可展開區塊，先看全貌、需要時再深入
 
+## 來源
+
+起源於 Claude Community 的 [`eli5`](https://github.com/anthropics/claude-plugins-community/tree/main/eli5) skill（以極淺白的圖解說明主題），依自己的需求調整：從「給五歲小孩看」改為「資深工程師帶 junior」的視角，並擴充成由概念到細節的分層章節與可展開細節。
+
+原作依 [Apache License 2.0](https://github.com/anthropics/claude-plugins-community/blob/main/LICENSE) 授權。
+
 ## 檔案
 
 | 檔案 | 說明 |
