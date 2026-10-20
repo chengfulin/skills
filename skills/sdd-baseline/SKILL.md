@@ -43,7 +43,7 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion
    constitution.md 的載入文件表；本階段 MUST／參考範圍與 PR 檢查清單逐條抄自
    README 對應階段章節，不改寫。
 4. 收尾以 AskUserQuestion 問下一步：寫入專案 README「SDD 導入宣告」章節（有 README
-   就補章節、沒有就建最小版）／交給 sdd-harness 開始（提示設定 `SDD_BASELINE_REPO`）／
+   就補章節、沒有就建最小版）／交給 sdd-harness 開始（把摘要貼進啟動 prompt）／
    只要摘要。
 
 完成準則：摘要的專案類型、風險分級、應用類型、導入階段、載入文件五欄都有值且各附
@@ -74,10 +74,11 @@ bash "$SKILL_DIR/scripts/sync-baseline.sh" [<本地 sdd-baseline 路徑>]
 
 ## 與 sdd-harness 的關係
 
-- sdd-harness 步驟 2 自行以 `fetch-baseline.sh` 抓 `SDD_BASELINE_REPO` 指定的基線。
-  要用本基線，啟動 harness 前 `export SDD_BASELINE_REPO=chengfulin/sdd-baseline`。
+- sdd-harness 步驟 2 **預設**以 `copy-baseline.sh` 把本 skill 的 `references/baseline/`
+  複製為目標專案的 `.specify/memory/baseline/`（位置可用 `SDD_BASELINE_DIR` 覆寫；
+  使用者在 prompt 指定自訂憲章時改用其內容）。基線有更新時先在本 skill 跑同步模式，
+  harness 對既有專案只唯讀比對兩邊 manifest 的 `head_commit`，經使用者同意才重抓。
 - 決策摘要的欄位對應 harness `sdd-adoption.json` 的 `adoption_phase`／`app_type`／
-  `risk_tier`／`loaded_docs`；使用者可把摘要貼給 harness，作為步驟 2 提問的答案。
-- `references/baseline/manifest.json` 與 harness 抓取的 manifest 同 schema。離線時可把
-  本副本複製為目標專案的 `.specify/memory/baseline/`，但須先告知使用者副本版本並取得
-  同意（harness 基線決策樹的要求）。
+  `risk_tier`／`loaded_docs`；使用者把摘要貼進 harness 的啟動 prompt，步驟 2 直接採用、
+  只覆述確認。
+- `references/baseline/manifest.json` 即 harness 複製到目標專案的 manifest（同一份）。

@@ -51,4 +51,4 @@
 
 ### 下一步
 
-<AskUserQuestion 的結果：寫入 README／交給 sdd-harness（附 `export SDD_BASELINE_REPO=<repo>`）／只要摘要>
+<AskUserQuestion 的結果：寫入 README／交給 sdd-harness（把本摘要貼進啟動 prompt）／只要摘要>
