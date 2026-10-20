@@ -26,6 +26,12 @@
 | [sdd-baseline](skills/sdd-baseline/) | 團隊 SDD 憲章基線的參考型 skill：SDD 開始前依專案類型、風險因子、應用類型與團隊成熟度決定風險分級、導入階段與載入文件，也可查條款、同步基線副本 |
 | [tech-mentor](skills/tech-mentor/) | 以資深工程師帶 junior 的視角，將技術主題整理成由概念到細節的分層 HTML 教學頁 |
 
+## 使用範例
+
+| Skill | 範例 repo |
+| --- | --- |
+| [make-mockup-harness](skills/make-mockup-harness/) | [demo_skill_make-mockup-harness](https://github.com/chengfulin/demo_skill_make-mockup-harness/tree/main) |
+
 ## 安裝
 
 將需要的 skill 資料夾複製（或 symlink）到 Claude Code 的 skills 目錄：

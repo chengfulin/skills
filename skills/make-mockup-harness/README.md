@@ -40,6 +40,13 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 
 ---
 
+## 範例
+
+以「水滸傳人物時間軸」為題實際跑完的產物（v1 → v2 升版的 Design Brief、回饋紀錄、凍結的 mockup，以及步驟 7 的 SDD 交接包）：
+[chengfulin/demo_skill_make-mockup-harness](https://github.com/chengfulin/demo_skill_make-mockup-harness/tree/main)
+
+---
+
 ## 前置需求
 
 - 目標 repo 需為 git repo（產物逐階段 commit）。
