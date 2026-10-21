@@ -12,7 +12,7 @@ storyboard。報告路徑：`make-mockups/<slug>/reviews/v<N>-consistency.md`。
 - `mockups/v<N>/index.html`——**不整份 Read**，只用下列方式取證據
 - `feedback/v<N>-comments.md`（若有）
 - `mockups/v<N>/export.json` 的 `build` 欄所指 build 及其之前的 `mockup-src/builds/v<N>-b*/build.md`
-  （只看「自行決定的呈現選擇」「偏離 brief」「待確認」三段；舊專案沒有 build 紀錄時改看 `feedback/v<N>-build-notes.md`）
+  （只看「自行決定：呈現」「自行決定：互動行為」「偏離 brief」「待確認」四段；舊專案沒有 build 紀錄時改看 `feedback/v<N>-build-notes.md`）
 
 ## 程序
 
@@ -29,7 +29,8 @@ storyboard。報告路徑：`make-mockups/<slug>/reviews/v<N>-consistency.md`。
    `grep -o -m 5 -E '<關鍵字A>|<關鍵字B>' mockups/v<N>/index.html | sort | uniq -c`
    有證據 → 一致；無證據 → 規格有、mockup 無；證據顯示行為與規則不同 → 衝突。
 3. **反向盤點**
-   從步驟 1 的多出項與各 build.md 的「自行決定的呈現選擇」「偏離 brief」「待確認」，列出 mockup 已有但 storyboard 沒寫的規則。
+   從步驟 1 的多出項與各 build.md 的「自行決定：互動行為」（`B` 項，逐條列入）、「自行決定：呈現」（`P` 項，只列碰到規則的）、
+   「偏離 brief」「待確認」，列出 mockup 已有但 storyboard 沒寫的規則；出處寫 `v<N>-b<kk>#B<nn>` 等完整引用。
    引用時標 build id 與 C 編號（例：`v1-b03#C02`），方便回寫時定位。
    帶 `data-demo` 的展示鷹架（角色切換列）不算多出項。
 4. **操作驗證（互動行為）**

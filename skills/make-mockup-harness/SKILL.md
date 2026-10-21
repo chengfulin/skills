@@ -170,6 +170,9 @@ prompt 必附：
    - 「待確認」非空 → AskUserQuestion 問使用者；屬規則就依通用規則 1 先寫回 storyboard，再開新 patch build。
    - 有變更項「退回」→ 補齊 request 的缺漏（通常是規則類沒寫回 storyboard），開新 build 重做該項。
    - data-page 對照有缺漏 → 開新 patch build 補。
+   - JS 語法「失敗」→ 不採用，開新 patch build 修；「未檢查」照常審，告知使用者發布後先自己開一次。
+   - 有互動行為 `B` 項 → 列給使用者看（它們在步驟 5 會被列為「規格未寫」）；使用者當下要定案的依通用規則 1 寫回 storyboard，
+     不需要的開 patch build 移除，其餘留到步驟 5。
 4. **採用與發布**：`cp` 該 build 的 `index.html` 到 `mockup-src/index.html` → `Artifact publish`（同一 file_path）→
    `builds.md` 填 artifact 版本 id、狀態「已發布」；首次發布把網址寫進狀態檔 `mockup.artifactUrl`，
    給使用者連結並說明只有本人能開、分享需自行操作。

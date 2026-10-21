@@ -21,6 +21,9 @@ mockup-src/
 - **build id**：`v<N>-b<kk>`，`kk` 為該版內兩位數流水號，從 `01` 起；跨版不續號（v2 從 `v2-b01` 起）。
 - **變更項**：request 內以 `C<nn>` 編號，引用時寫 `v<N>-b<kk>#C<nn>`（例：`v1-b03#C02`）。
   SA 說「b05 的 C01 做錯了」，下一個 request 的來源欄就寫 `v1-b05#C01`。
+- **自行決定項**：builder 在 build.md 記下 brief／request 沒指定、由它決定的事，分兩類各自編號，每個 build 從 `01` 起：
+  `P<nn>` 呈現（版面、配色、元件樣式、文案措辭）、`B<nn>` 互動行為（操作後頁面怎麼反應）。
+  引用寫 `v<N>-b<kk>#P<nn>`／`#B<nn>`，與 C 項同樣可當下一個 request 的來源或回退目標。
 - **base**：本次以哪個 build 的快照為底稿。`new` 無 base；回退時 base 指向較舊的 build，不必是最新那個。
 
 ## 模式
@@ -49,8 +52,10 @@ mockup-src/
 2. `mkdir` build 目錄 → `cp` base 快照進去。
 3. 每個變更項以 `grep -n -m 3` 定位；同一字串出現多處、或需要看上下文才能判斷時，Read 該行前後各 10 行。
    定位結果不唯一或發現要動的不只是值 → 停下，把該 build 改成 `patch` 派 builder（同一 build id、request 模式改寫）。
-4. 對**本 build 目錄的快照**做 Edit；`shasum -a 256`、`wc -c` 取 base 與產出的雜湊與大小。
-5. 寫 build.md：標頭與「變更項處理」照格式填（位置寫行號與 selector），其餘段落寫「—（inline 不變動結構）」。
+4. 對**本 build 目錄的快照**做 Edit；`bash $SKILL_DIR/scripts/check-js.sh <快照>` 須為「通過」或「未檢查」；
+   `shasum -a 256`、`wc -c` 取 base 與產出的雜湊與大小。
+5. 寫 build.md：標頭與「變更項處理」照格式填（位置寫行號與 selector），自行決定、偏離 brief、待確認等段落
+   寫「—（inline 不變動結構）」。
    artifact-design 欄寫「沿用 base」。
 
 ## 接續同一個 builder
@@ -92,6 +97,7 @@ mockup-src/
 - 模式：patch | inline｜base：v<N>-b<kk>（sha256 <前 8 碼>）
 - 產出：builds/v<N>-b<kk>/index.html（<bytes> bytes，sha256 <前 8 碼>）
 - artifact-design：已載入 | 未載入（依 mockup-build.md「頁面契約」製作）| 沿用 base
+- JS 語法：通過 | 失敗 | 未檢查（`check-js.sh` 結果）
 
 ## 變更項處理
 
@@ -104,8 +110,15 @@ mockup-src/
 ## data-page 對照
 - brief 畫面清單 vs 產出：一致 | 缺 S<n>…／多 S<n>…
 
-## 自行決定的呈現選擇
-- <brief 沒指定、由 builder 決定的版面／元件／文案，一條一句；revise／patch 只列本次新增的>
+## 自行決定：呈現
+| P | 畫面 | 內容 |
+|---|------|------|
+| P01 | S2 | 事件卡最小寬 150px，重疊時分軌 |
+
+## 自行決定：互動行為
+| B | 畫面 | 內容 | 位置 |
+|---|------|------|------|
+| B01 | S3、S4 | 事件與角色面板同時只開一個，開另一個即取代 | `openPanel()` |
 
 ## 偏離 brief
 - <無 | 哪一條、為什麼>
@@ -116,7 +129,13 @@ mockup-src/
 
 - **結果**：`完成`、`部分`、`未做`（有理由）、`退回`（request 不合規）。
 - **位置**：`data-page` 的畫面編號加上 CSS selector 或函式名，下一個 build 與一致性檢核都靠它定位。
-- 「待確認」與「自行決定的呈現選擇」是一致性檢核反向盤點的輸入（`consistency-check.md` 程序 3）。
+- **自行決定的分類**：判斷法是「能不能寫成『當使用者…，頁面…』的驗收條件」——能就是 `B`，只描述靜態外觀就是 `P`。
+  `B` 包括點擊後去哪、面板開關與互斥、按鈕停用條件、預設值、清單排序、空狀態與邊界處理、
+  操作後的回饋（「已複製」提示、按鈕文字變化、自動還原的時間）、在某些裝置或輸入方式下行為不同（例如觸控裝置看不到 hover 提示）。
+  `B` 是 storyboard 沒寫的行為，步驟 5 會逐條列入「mockup 已有但規格未寫」。
+  會改變**顯示哪些資料或狀態判定結果**的屬業務決定，不記 `B`，只留佔位寫進「待確認」；同一件事不要同時列在 `B` 與「待確認」。
+  revise／patch 只列本次新增的項目，無則寫「無」。
+- 「待確認」與兩類自行決定項是一致性檢核反向盤點的輸入（`consistency-check.md` 程序 3）。
 
 ## `builds.md`（orchestrator 維護）
 
