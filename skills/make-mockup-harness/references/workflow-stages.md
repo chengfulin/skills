@@ -66,7 +66,7 @@
 ### §3 製作 mockup
 - `mockup-src/index.html` 存在，brief 畫面清單的每個畫面都有對應的 `data-page`。
 - `mockup-src/builds.md` 存在；每個 build 目錄都有 `request.md`，狀態非「已派遣」者都有 `index.html` 與 `build.md`。
-- `mockup-src/index.html` 的 sha256 與 `mockup.currentBuild` 的快照相同（主對話沒有繞過 builder 直接改）。
+- `mockup-src/index.html` 的 sha256 與 `mockup.currentBuild` 的快照相同（沒有繞過 build 直接改工作檔）。
 - 狀態檔 `mockup.artifactUrl` 非空，`versions[N-1].publishedAt` 填入。
 - 狀態檔 `stage: mockup`。本階段不 commit（迭代中，工作檔隨步驟 4 一起入版）。
 

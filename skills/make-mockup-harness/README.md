@@ -22,7 +22,7 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 |------|------|
 | `SKILL.md` | orchestrator 主規則：6 階段＋選配的交接 SDD、通用規則（含派工與模型對照表）、每步驟指示 |
 | `agents/mockup-brief-writer.md` | 步驟 2 的 subagent：讀 storyboard 推導畫面、狀態、假資料寫成 brief（sonnet + high；v1 覆寫 opus） |
-| `agents/mockup-builder.md` | 步驟 3 的 subagent：依 build request 產出 mockup HTML 快照與產出紀錄，不發布、不問使用者（sonnet + high） |
+| `agents/mockup-builder.md` | 步驟 3 的 subagent：依 build request 產出 mockup HTML 快照與產出紀錄，不發布、不問使用者（sonnet + high）；微修由主對話以 inline build 直接改 |
 | `agents/mockup-consistency-checker.md` | 步驟 5 的 subagent：獨立 context 檢核凍結 mockup 與 storyboard 的一致性，含 Chrome 操作驗證（sonnet + high；交接版覆寫 opus） |
 | `references/workflow-stages.md` | 各階段完成準則、狀態檔 schema、續跑規則 |
 | `references/design-brief.template.md` | mockup 製作指示（brief）模板 |

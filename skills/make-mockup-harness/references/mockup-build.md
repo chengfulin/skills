@@ -2,6 +2,7 @@
 
 步驟 3 的每一次產出都是一個 **build**：orchestrator 寫輸入（`request.md`），`mockup-builder` 依輸入產出
 HTML 快照與產出紀錄（`index.html`、`build.md`），orchestrator 審過後採用、發布並在索引回填版本 id。
+符合「inline 條件」的微修由 orchestrator 自己產出（`inline` 模式），紀錄格式相同。
 任何修改（含改字、調間距）都開新 build，不直接改工作檔——迭代與回退都靠 build id 索引。
 
 ```
@@ -11,8 +12,8 @@ mockup-src/
 └── builds/
     └── v<N>-b<kk>/
         ├── request.md      # 輸入（orchestrator 寫，派遣後不改）
-        ├── index.html      # 產出快照（builder 寫）
-        └── build.md        # 產出紀錄（builder 寫）
+        ├── index.html      # 產出快照（builder 寫；inline 由 orchestrator 寫）
+        └── build.md        # 產出紀錄（同上）
 ```
 
 ## 識別碼
@@ -28,14 +29,42 @@ mockup-src/
 |------|------|------|-----------|
 | `new` | v1 初版，依 brief 全新製作 | 無 | 整份 brief（變更項只列一條 `C01 依 brief 全部畫面`） |
 | `revise` | v≥2 第一個 build，依 brief「本版異動」增量修改 | 前一版凍結時採用的 build | brief「本版異動」逐條轉成 C 項 |
-| `patch` | 迭代中的任何修改 | 通常是目前採用的 build | SA 對話、artifact 留言、回退要求 |
+| `patch` | 迭代中的修改（不符 inline 條件者） | 通常是目前採用的 build | SA 對話、artifact 留言、回退要求 |
+| `inline` | 微修，orchestrator 直接改、不派 builder | 目前採用的 build | SA 對話中的改字、調樣式數值 |
+
+## inline 條件與程序
+
+派 builder 有固定開銷（載入格式文件、定位 base 程式碼），一次只改幾個字時開銷是改動本身的十倍以上。
+**全部符合**才走 `inline`，任一不符就用 `patch`：
+
+- 所有變更項都是「呈現」類（不含規則、回退）。
+- 只改既有文案，或在既有 CSS 規則內改值、加宣告（顏色、字級、字重、間距、圓角、寬高、陰影）；不新增 CSS 規則、不新增或刪除元素、
+  不改 class／id／`data-page`、不動 `<script>` 內的邏輯（JS 字串常數中的純文案可以改）。
+- 整個 request 改動處合計 ≤ 3 處（同一條 CSS 規則內改多個屬性算 1 處）。
+- base 是目前採用的 build。
+
+程序（主對話執行，仍遵守通用規則 3，不整份 Read 快照）：
+
+1. request.md 照常寫（模式 `inline`），`builds.md` 加一列。
+2. `mkdir` build 目錄 → `cp` base 快照進去。
+3. 每個變更項以 `grep -n -m 3` 定位；同一字串出現多處、或需要看上下文才能判斷時，Read 該行前後各 10 行。
+   定位結果不唯一或發現要動的不只是值 → 停下，把該 build 改成 `patch` 派 builder（同一 build id、request 模式改寫）。
+4. 對**本 build 目錄的快照**做 Edit；`shasum -a 256`、`wc -c` 取 base 與產出的雜湊與大小。
+5. 寫 build.md：標頭與「變更項處理」照格式填（位置寫行號與 selector），其餘段落寫「—（inline 不變動結構）」。
+   artifact-design 欄寫「沿用 base」。
+
+## 接續同一個 builder
+
+同一 session 內，下一個 `patch` 的 base 正是某個 builder 剛產出的 build 時，以 SendMessage 接續它，
+訊息只寫新 build id（request 已寫好）。它已讀過格式文件與 base 內容，省去重讀；
+跨 session、base 是其他 build、或該 builder 已接續 3 次時改派新的（context 累積過長）。
 
 ## `request.md`（orchestrator 寫）
 
 ```markdown
 # Build request v<N>-b<kk>
 
-- 模式：new | revise | patch
+- 模式：new | revise | patch | inline
 - base：v<N>-b<kk> | 無
 - brief：briefs/v<N>-design-brief.md
 - storyboard：變更紀錄最新列 v<N>（<日期>）
@@ -60,9 +89,9 @@ mockup-src/
 ```markdown
 # Build v<N>-b<kk>
 
-- 模式：patch｜base：v<N>-b<kk>（sha256 <前 8 碼>）
+- 模式：patch | inline｜base：v<N>-b<kk>（sha256 <前 8 碼>）
 - 產出：builds/v<N>-b<kk>/index.html（<bytes> bytes，sha256 <前 8 碼>）
-- artifact-design：已載入 | 未載入（依 mockup-build.md「頁面契約」製作）
+- artifact-design：已載入 | 未載入（依 mockup-build.md「頁面契約」製作）| 沿用 base
 
 ## 變更項處理
 

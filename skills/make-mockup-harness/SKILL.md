@@ -2,7 +2,7 @@
 name: make-mockup-harness
 description: 以 orchestrator 帶領 SA 從需求到可互動 Mockup 的全流程：Story Board（make-storyboard）→ Design Brief → 依 brief 製作互動 HTML 並發布成 artifact → 凍結版本 → storyboard 與 mockup 一致性檢核 → 回饋回寫升版。當使用者要「做需求 mockup」、「把需求變成可展示的畫面」、「繼續／續跑 mockup 流程」、「凍結／匯出 mockup」、「記錄這次需求變更動到哪些畫面」，或 mockup 定稿後要「交接 SDD」「打包給 sdd-harness 開發」時使用。
 argument-hint: "[需求描述 | resume]"
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, ToolSearch, Skill, Agent, Artifact, ArtifactComments, mcp__claude-in-chrome__*
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, ToolSearch, Skill, Agent, SendMessage, Artifact, ArtifactComments, mcp__claude-in-chrome__*
 ---
 
 # Make Mockup Harness：需求到互動 Mockup 的 orchestrator
@@ -39,7 +39,7 @@ storyboard 是唯一權威；mockup 是 storyboard 的呈現，由 `mockup-build
 | 0 | 前置／續跑 | 工具檢查、決定 slug、讀狀態檔從中斷點繼續 | — | — |
 | 1 | Story Board | 以 `make-storyboard` 初版模式討論並產出 storyboard.md | 使用者確認 storyboard | ✅ |
 | 2 | Design Brief | 派 `mockup-brief-writer` 由 storyboard 推導畫面、角色、狀態、假資料 | 使用者確認 brief | ✅ |
-| 3 | 製作 mockup | 寫 build request 派 `mockup-builder` 產出 HTML、審過後發布成私人 artifact；SA 回饋一律開新 build | 使用者說「凍結」才結束 | — |
+| 3 | 製作 mockup | 寫 build request 派 `mockup-builder` 產出 HTML（微修由你以 inline build 直接改）、審過後發布成私人 artifact；SA 回饋一律開新 build | 使用者說「凍結」才結束 | — |
 | 4 | 凍結 | 取回已發布版本 → 歸檔 → 取留言 | — | ✅ |
 | 5 | 一致性檢核 | 派 `mockup-consistency-checker` 以 storyboard 對照 mockup，產五類報告 | 待決定項目請使用者裁決；選擇升版或交接 | ✅ → 步驟 6 或 7 |
 | 6 | 回饋回寫 | 以 `make-storyboard` 升版模式寫回 storyboard，更新 revisions.md | 逐條確認歸類 | ✅ → 回步驟 2 |
@@ -49,7 +49,7 @@ storyboard 是唯一權威；mockup 是 storyboard 的呈現，由 `mockup-build
 
 1. **storyboard 唯一權威**：任何來自迭代對話、artifact 留言或客戶的**規則、範圍、狀態**變更，先寫進
    storyboard 的「變更紀錄」與對應 User Story，再改 mockup 或產新 brief。不得直接改 mockup 了事；
-   純呈現（版面、配色、文案措辭）可在步驟 3 直接開 patch build 改。
+   純呈現（版面、配色、文案措辭）可在步驟 3 直接開 build 改。
    v<N> mockup 尚未凍結前發現 storyboard 有誤（例如查證後事實不符），可在 v<N> 內更正，
    變更紀錄 v<N> 列的摘要補註更正內容並另立 commit，不必升版。
 2. **凍結規則**：`make-mockups/<slug>/mockups/v<N>/` 一旦 commit 不得修改；新需求一律升版。
@@ -74,14 +74,16 @@ storyboard 是唯一權威；mockup 是 storyboard 的呈現，由 `mockup-build
 8. **派工與模型**：主對話只做決策、閘門、寫 build request、發布、commit 與使用者互動；
    brief 推導、mockup 製作與一致性檢核都派 subagent，產出者與驗收者必須是不同 context
    （brief 由 writer 寫、mockup 由 builder 做、檢核由 checker 做）。主對話**不直接編輯 mockup HTML**，
-   任何修改都經 build request，才能以 build id 追溯與回退。
+   任何修改都經 build request，才能以 build id 追溯與回退。唯一例外是符合 `mockup-build.md`「inline 條件」的微修：
+   由你在該 build 目錄的快照上直接 Edit 並寫 build.md，仍不得改 `mockup-src/index.html`
+   （mockup 的驗收者是步驟 5 的 checker，微修由你做不違反產出與驗收分離）。
    通用守則見同 repo `sdd-harness/references/model-dispatch.md`；本 skill 的對照表：
 
    | 任務 | agent／model | 逐次覆寫（Agent 工具的 `model` 參數） |
    |------|-------------|------------------------------------|
    | 步驟 2 brief | `mockup-brief-writer`（定義檔 sonnet + high） | **v1 → `opus`**：畫面拆解與狀態模型是本版 mockup 的架構判斷；v ≥ 2 只套「本版異動」做增量，不覆寫 |
    | 步驟 2 假資料事實查證 | `general-purpose`、`sonnet` | — |
-   | 步驟 3 製作 | `mockup-builder`（定義檔 sonnet + high） | — |
+   | 步驟 3 製作 | `mockup-builder`（定義檔 sonnet + high）；inline 微修由主對話做 | — |
    | 步驟 5 檢核 | `mockup-consistency-checker`（定義檔 sonnet + high） | **本版以交接 SDD 為目標 → `opus`**：交接後版本鎖定，偏離只能走 handback 迴圈，誤判代價最高 |
 
    effort 無法逐次覆寫，只能在定義檔設。subagent 保持單層（它們不再派 subagent）。
@@ -158,8 +160,12 @@ prompt 必附：
 （`v<N>-b<kk>`），輸入與產出成對留在 `mockup-src/builds/<build id>/`，索引在 `mockup-src/builds.md`：
 
 1. **寫 request**：`mockup-src/builds/<build id>/request.md`，模式 v1 首個為 `new`、v≥2 首個為 `revise`
-   （base＝前一版凍結的 build）、之後皆為 `patch`。`builds.md` 加一列，狀態「已派遣」。
-2. **派 `mockup-builder`**：prompt 附 mockup 根目錄絕對路徑、`<slug>`、build id、`$SKILL_DIR` 絕對路徑。
+   （base＝前一版凍結的 build）、之後為 `patch`，符合「inline 條件」的微修為 `inline`。`builds.md` 加一列，狀態「已派遣」。
+2. **產出**：
+   - `inline` → 依 `mockup-build.md`「inline 程序」自己改，寫完 build.md 直接到第 4 步。
+   - 其餘派 `mockup-builder`：prompt 附 mockup 根目錄絕對路徑、`<slug>`、build id、`$SKILL_DIR` 絕對路徑。
+     `patch` 的 base 是**本 session 內同一個 builder 剛產出的 build** 時，改以 SendMessage 接續該 builder
+     （只附新 build id，它已有 base 的內容與格式文件，不必重讀）；跨 session 或 base 不是它產出的就派新的。
 3. **審回報**（≤20 行，結論行 `Build 結論`），`builds.md` 回填結果與 sha256、狀態「已產出」：
    - 「待確認」非空 → AskUserQuestion 問使用者；屬規則就依通用規則 1 先寫回 storyboard，再開新 patch build。
    - 有變更項「退回」→ 補齊 request 的缺漏（通常是規則類沒寫回 storyboard），開新 build 重做該項。
@@ -168,8 +174,10 @@ prompt 必附：
    `builds.md` 填 artifact 版本 id、狀態「已發布」；首次發布把網址寫進狀態檔 `mockup.artifactUrl`，
    給使用者連結並說明只有本人能開、分享需自行操作。
    不採用的 build 標「未採用」，不發布。
-5. **迭代**：SA 的回饋（含改字、調間距）一律回到第 1 步開 patch build，多條回饋合併成一個 request 的多個 C 項；
-   要回退就以較舊的 build 為 base 或寫「回退」類 C 項。主對話不直接編輯 HTML。
+5. **迭代**：SA 的回饋（含改字、調間距）一律回到第 1 步開新 build，要回退就以較舊的 build 為 base 或寫「回退」類 C 項。
+   **合併回饋**：SA 零星提出的修改先記成待辦清單（每條一句、標呈現或規則），回覆時列出目前累積的條數，
+   不逐條開 build；SA 說「改吧」、這一輪回饋說完、或要發布給他人看之前，才把全部待辦合併成一個 request 的多個 C 項。
+   SA 明說要立刻看某一條的效果就單獨開。合併後只要有一條不符 inline 條件，整個 request 就走 `patch`。
 
 使用者說「凍結」「匯出」「定稿」才進步驟 4。狀態檔 `stage: mockup`、`mockup.currentBuild` 隨採用更新。此階段不 commit。
 

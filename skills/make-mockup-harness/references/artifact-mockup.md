@@ -15,7 +15,8 @@ Claude Design 已併入 Claude，設計改存成 artifact；獨立網站 claude.
 
 ## 1. 製作（步驟 3）
 
-HTML 由 `mockup-builder` subagent 產出，orchestrator 只寫輸入、審產出、發布。每次產出是一個 build，
+HTML 由 `mockup-builder` subagent 產出，orchestrator 只寫輸入、審產出、發布（符合 inline 條件的微修例外，
+由 orchestrator 自己改）。每次產出是一個 build，
 request／快照／產出紀錄／索引的格式與 build id 規則見 `mockup-build.md`。
 
 1. **寫 request**：`mockup-src/builds/<build id>/request.md`；`builds.md` 加一列「已派遣」。
@@ -32,8 +33,9 @@ request／快照／產出紀錄／索引的格式與 build id 規則見 `mockup-
 
 ## 2. 迭代
 
-- SA 在對話裡提出修改 → 寫 patch request（多條回饋合併成多個 C 項）→ 派 builder → 審 → 採用並以**同一 file_path**
-  重新發布（網址不變，版本 id 遞增）。改字、調間距也走這條路，主對話不直接編輯 HTML。
+- SA 在對話裡提出修改 → 先記成待辦，一輪說完再合併成一個 request（多個 C 項）→ 符合 inline 條件就自己改，
+  否則派 builder（base 是同 session builder 剛產出的就接續它）→ 審 → 採用並以**同一 file_path**
+  重新發布（網址不變，版本 id 遞增）。改字、調間距也要開 build，不直接改工作檔。
 - **純呈現**（版面、配色、文案措辭、元件樣式）直接寫成「呈現」類 C 項。**涉及規則、範圍、狀態**的改動先依通用規則 1
   寫回 storyboard，再寫成「規則」類 C 項並引用 storyboard 位置與原文；不確定屬哪一種就問。
 - **回退**：以較舊的 build 為 base 開新 build，或寫「回退」類 C 項指到 `v<N>-b<kk>#C<nn>`。
@@ -95,7 +97,7 @@ request／快照／產出紀錄／索引的格式與 build id 規則見 `mockup-
 |---|---|---|
 | 製作者 | Claude Design | `mockup-builder` 依 brief 與 build request 產出 |
 | 交接 | Chrome 貼 brief、按送出，耗用 Claude Design 額度 | `Artifact publish` |
-| 迭代 | SA 在 Claude Design 畫布上改 | SA 在對話提出，開 patch build 產出後重發布，每次輸入與產出都有紀錄 |
+| 迭代 | SA 在 Claude Design 畫布上改 | SA 在對話提出，合併成一個 build（微修 inline、其餘 patch）產出後重發布，每次輸入與產出都有紀錄 |
 | 取檔 | 內部 API `GetFile` → Blob 下載到 ~/Downloads | `Artifact read` 存到 scratchpad |
 | 留言 | 內部 API `ListComments`（結構未實測） | `ArtifactComments read` |
 | 檔案大小 | 數百 KB 到數 MB（內嵌字型、打包成 JS 字串） | 數十 KB，DOM 可直接取證 |

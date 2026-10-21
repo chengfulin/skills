@@ -36,12 +36,15 @@ request 不存在 → 以「未執行」回報。
 1. Read `mockup-build.md`（格式與模式定義）與 request.md。逐條檢查變更項：
    規則類沒有 storyboard 引用或沒抄錄原文 → 該項結果記 `退回`，不做；
    引用原文與 storyboard 現況不符 → 記 `退回` 並在說明寫出差異。
-2. 以 Skill 工具載入 `artifact-design`，依它的頁面契約製作；無法載入時改依 `mockup-build.md`「頁面契約」，
-   並在 build.md 標頭記「未載入」。
+2. `new`／`revise`：以 Skill 工具載入 `artifact-design`，依它的頁面契約製作；無法載入時改依 `mockup-build.md`「頁面契約」，
+   並在 build.md 標頭記「未載入」。`patch` 一律不載入（base 已符合頁面契約，載入一次約 15K token），標頭記「沿用 base」；
+   新增的元素沿用 base 既有的 `:root` token 與相近元件的樣式。
 3. 依模式製作：
    - `new`：Read 整份 brief，從零寫出所有畫面。
-   - `revise`／`patch`：Read base 快照作底稿（快照是你要改的程式碼，可以整份讀），只改變更項涉及的部分，
-     其餘照抄。`revise` 另 Read brief 的「本版異動」段與受影響畫面的段落。
+   - `revise`：Read base 快照作底稿（快照是你要改的程式碼，可以整份讀），只改變更項涉及的部分，
+     其餘照抄；另 Read brief 的「本版異動」段與受影響畫面的段落。
+   - `patch`：**不整份讀 base**。每個變更項先 `grep -n` 找到相關 selector、函式或文案，再以 Read 的 offset／limit
+     讀該處前後所需的範圍；brief 只在變更項需要對照時讀相關段落。變更項涉及大範圍重構才整份讀。
    - `回退` 類變更項：Read 所指 build 的 build.md 找到該項的「位置」，從該 build 的快照取回對應程式碼。
    製作要求（brief「製作要求」為準，以下為底線）：
    - 每個畫面根元素加 `data-page="S<n> <畫面名>"`，名稱與 brief 畫面清單一致。
@@ -55,6 +58,12 @@ request 不存在 → 以「未執行」回報。
    - 每個完成的變更項，以 `grep -n -m 3` 確認改動在快照中出現，位置記入 build.md。
    - `shasum -a 256` 取 base 與產出的雜湊，`wc -c` 取大小。
 6. 依 `mockup-build.md` 的 `build.md` 格式寫入 `mockup-src/builds/<build id>/build.md`。
+
+## 接續派遣
+
+orchestrator 可能以訊息接續你，只給新的 build id。這時 base 通常是你上一個產出的 build：
+不必重讀 `mockup-build.md` 與 base，從程序 1 讀新的 request.md 開始；base 不是你上一個產出時照一般程序處理。
+寫入範圍換成新 build 的目錄，上一個 build 目錄不再修改。
 
 ## 回報合約（長度上限）
 
