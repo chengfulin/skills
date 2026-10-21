@@ -123,8 +123,9 @@ phase／story 多 commit + 最後 `after_implement`。
 - 影響邊界報告不寫檔、不入狀態檔——中斷後續跑時**重做**（唯讀、冪等）。
 - tasks.md 的 `[X]` 只由主對話依 implementer 回報勾選（單一寫入者）；
   implementer 改動 tasks.md 即越界。
-- 未完成 story ≥2 時，第一個 story 開工前須有並行規劃 commit 與
-  `steps.implement.parallel_plan`；觀察期內它**只是建議**，執行順序仍依 tasks.md。
+- 未勾選 task ≥2 時，Setup 開工前須有並行規劃 commit、`<FEATURE_DIR>/parallel-plan.json`
+  與 `steps.implement.parallel_plan`（task 粒度、全域）；觀察期內它**只是建議**，
+  執行順序仍依 tasks.md 逐 phase。
 - 狀態檔 story 旗標：`steps.implement.stories.USk = {validated, reviewed, committed}`，
   在該 story 的 commit **之前**更新。
 - 修正迴圈上限 3 輪（含 reviewer 修正後的 validator 回歸，與 Polish 階段
@@ -195,12 +196,16 @@ story 迴圈。
       },
       "parallel_plan": {
         "advisory": true,
-        "stories": ["US1", "US2", "US3"],
+        "granularity": "task",
         "basis": "codegraph",
-        "groups": [["US1"], ["US2", "US3"]],
-        "conflicts": [
-          {"a": "US1", "b": "US2", "type": "契約", "evidence": "US1 在 IPaymentAdapter 加 refund()，US2 新增其實作"}
-        ]
+        "tasks": 48,
+        "conflict_pairs": 211,
+        "pairs": 1128,
+        "by_type": {"寫入": 40, "相依": 120, "資源": 6, "宣告": 15, "未定": 30},
+        "batches": 17,
+        "max_width": 9,
+        "low_conf": ["T031"],
+        "plan_file": "specs/001-xxx/parallel-plan.json"
       }
     }
   },
@@ -219,11 +224,15 @@ story 迴圈。
 commit 入版控（收尾必須 working tree 乾淨，不允許 commit 後再補寫狀態檔）。
 不記 commit sha——需要時以 `git log --grep '（NNN, USk）'` 或階段訊息回溯。
 
-`parallel_plan` 欄位（implement-loop.md 步驟 1P 寫入；未完成 story 少於 2 個時
-不建立）：`advisory` 觀察期恆為 true；`stories`＝規劃涵蓋的 story；`basis` 取
-`codegraph`／`grep`／`greenfield`（各 story 中最弱者）；`groups` 依群組順序，
-同組＝判定可並行；`conflicts[].type` 取 `寫入`／`相依`／`資源`／`契約`／`宣告`／
-`未定`。重規劃回到步驟 8 前刪除此欄位（任務已變，規劃失效）。
+`parallel_plan` 欄位（implement-loop.md 步驟 0P 由 `scripts/task-plan.py build`
+寫入，主對話不手改；未勾選 task 少於 2 個時不建立）：`advisory` 觀察期恆為 true；
+`granularity` 恆為 `task`；`basis` 取 `codegraph`／`grep`／`greenfield`（各
+analyzer 中最弱者）；`tasks`／`pairs`／`conflict_pairs` 為規劃涵蓋的 task 數、
+pair 數與衝突 pair 數；`by_type` 的鍵取 `寫入`／`相依`／`資源`／`契約`／`宣告`／
+`未定`；`batches`＝批次數（同批＝判定可同時開工）、`max_width`＝最寬批次的 task
+數；`low_conf`＝信心低、與其他所有 task 記為衝突的 task；`plan_file` 指向完整
+規劃（逐 task 集合、衝突清單、批次表、關鍵路徑、熱點檔），隨規劃 commit 入版控。
+重規劃回到步驟 8 前刪除此欄位與 `plan_file`（任務已變，規劃失效）。
 
 `brief` 欄位（選填）：導覽簡報首次以 Artifact 工具發布成功時寫入 `artifact_url`，
 供跨 session 續跑時更新同一頁（程序見 references/review-gate.md）；Artifact
@@ -263,6 +272,7 @@ commit 入版控（收尾必須 working tree 乾淨，不允許 commit 後再補
    | plan.md 與 research／data-model 等設計檔 | plan | 同上 |
    | tasks.md | tasks | 同上 |
    | `specs/<NNN>/brief/`（feature-brief.html／README.md） | 隨同批 dirty 的 spec／plan／tasks 歸屬 | 與同批檔案一起處置；**單獨** dirty（簡報已產、階段 commit 未做）→ 不單獨補 commit，回該階段的通用規則 7 閘門重走（簡報可重生；「該階段」＝`detected_stage`，因狀態旗標在閘門通過前不會寫入） |
+   | `specs/<NNN>/parallel-plan.json`（可能連同 `.sdd-workflow.json`） | implement 0P 中斷於 commit 前 | 規劃可重生：刪除該檔、還原狀態檔的 `parallel_plan`，回 implement-loop.md 步驟 0P 重做 |
    | 產品程式碼／測試碼 | implement 中斷 | **不補 commit**——半成品未過閘門。找出所屬 story，回到 story 閘門重走（影響邊界 → 續作 → 越界檢查 → validator → reviewer），全數通過才依正常程序 commit |
    | `.gitignore` 的 `.codegraph/` 行／`.codegraph/` 目錄 | implement 前置 | 依 implement-loop.md 索引準備規則：`.gitignore` 變更不單獨補 commit、隨下一個 commit 入版控；`.codegraph/` 目錄確認已被 ignore（未 ignore 就補行），不得入版控 |
    | 橫跨多階段或對不進表 | 不明 | 不自行 commit；列出檔案清單，AskUserQuestion 請使用者指定歸屬（可分多次 commit） |
@@ -277,14 +287,14 @@ commit 入版控（收尾必須 working tree 乾淨，不允許 commit 後再補
 6. 向使用者回報偵測結果（「偵測到：<階段> 已完成，將從 <下一階段> 續跑」），
    確認後繼續；不重做已完成階段。
 7. 特例：`detected_stage=implement` 時，從狀態檔找出第一個未完成的 story，
-   並向使用者列出已完成/待做的 story 清單。Foundational（無則 Setup）已 commit、
-   未完成 story ≥2 而 `parallel_plan` 缺失或未涵蓋全部未完成 story → 先補做
-   implement-loop.md 步驟 1P 再進 story 迴圈。
+   並向使用者列出已完成/待做的 story 清單。未勾選 task ≥2 而 `task-plan.py check`
+   未印出 `plan=ok`（規劃檔缺失或未涵蓋全部未勾選 task）→ 先補做 implement-loop.md
+   步驟 0P（只規劃剩下的 task）再續跑。
 
 ## 錯誤處理細則（SKILL.md「錯誤處理」引用，本節為唯一版本）
 
 - **subagent 回報無法判讀**（Agent 呼叫失敗，或回報缺「審查結論／驗證結論／影響
-  邊界報告／並行規劃集合」標頭）→ 以原 prompt 重派一次；仍失敗 → 一律**視同該閘門 FAIL**
+  邊界報告／並行規劃集合」標頭，或 plan 模式的輸出檔缺行）→ 以原 prompt 重派一次；仍失敗 → 一律**視同該閘門 FAIL**
   （不得腦補為通過），計入 3 輪上限並依 SKILL.md 通用規則 4 處理。
   回報**超長但有效** → 依 model-dispatch.md §5 要求重整一次，不照單全收。
 - **憲章來源不可用**（`check_baseline=absent` 且使用者未在 prompt 提供自訂憲章）
@@ -306,10 +316,13 @@ commit 入版控（收尾必須 working tree 乾淨，不允許 commit 後再補
 （`git log --oneline`）、驗收結果摘要（幾條 PASS）、審查發現與處理、
 已知偏差（若有）、建議後續（push / PR / 下一個 feature）。
 
-有 `parallel_plan` 時另附**並行規劃觀察**（供評估是否導入並行實作）：群組數與
-可並行 pair 數、衝突類型分布，以及**規劃誤判**——對每組被判可並行的 pair，以
-`git log --grep '（NNN, USk）' --name-only --format=` 取兩者實際變更檔案，有交集即
-列出（檔案＋pair）；漏判的檔案若屬共用資源或契約，一併註明類別。建議後續固定附兩條
+有 `parallel_plan` 時另附**並行規劃觀察**（供評估是否導入並行實作），內容取自
+`python3 $SKILL_DIR/scripts/task-plan.py verify --plan <FEATURE_DIR>/parallel-plan.json
+--root <專案根> --feature NNN`：task 數／批次數／理論加速、衝突比例與類型分布，以及
+**集合涵蓋率**——各 phase 實際 commit 的檔案中，沒被該 phase 任何 task 寫入集合涵蓋
+的檔案；其中也被其他 phase 碰到的列為「可能漏判」（全域並行時最可能撞檔之處），
+逐項註明屬隱含測試修改、實作時拆出的新檔或共用資源。實作是一個 phase 一個 commit，
+無法逐 task 核對，涵蓋率是目前唯一可驗的誤判指標。建議後續固定附兩條
 提醒：
 
 1. `.specify/memory/baseline/` 含憲章基線副本（來源記於其 `manifest.json`），

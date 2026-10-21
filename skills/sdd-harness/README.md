@@ -25,8 +25,9 @@ sdd-harness（orchestrator skill）
    │  6  /speckit.tasks ──────────────────────────────────── commit
    │  7  /speckit.analyze ─ [sdd-spec-clarifier] 一致性檢核
    │        → 簡報列發現表 → 使用者同意修正 ───────────────── commit（恆有：至少狀態檔）
-   │  8  /speckit.implement ─ codegraph 建索引；Foundational 後並行派
-   │        [sdd-impact-analyzer]（plan 模式）產出 story 並行分組建議 ── commit
+   │  8  /speckit.implement ─ codegraph 建索引；Setup 前依 phase 並行派
+   │        [sdd-impact-analyzer]（plan 模式）逐 task 取集合 → task-plan.py
+   │        排出全域並行批次建議 ───────────────────────────── commit
    │        之後逐 user story：
    │        [sdd-impact-analyzer] 影響邊界 → [sdd-implementer] 實作（限定邊界）→
    │        [sdd-feature-validator] 驗收 → [sdd-code-reviewer] 審查（含漣漪檢查）
@@ -83,7 +84,7 @@ sdd-harness/
 ├── agents/                        # 六個 subagent（以 scripts/install.sh 連到 ~/.claude/agents/）
 │   ├── sdd-spec-clarifier.md      # 規格/計畫 對憲章的對抗式審查（唯讀）
 │   ├── sdd-brief-writer.md        # 人為 review 閘門的功能導覽簡報（HTML；只寫 feature 的 brief/）
-│   ├── sdd-impact-analyzer.md     # story 開工前的影響邊界分析＋並行規劃集合（唯讀，codegraph）
+│   ├── sdd-impact-analyzer.md     # story 開工前的影響邊界分析＋逐 task 並行規劃集合（唯讀，codegraph）
 │   ├── sdd-implementer.md         # implement 階段的獨立 context 實作（寫碼與測試，不 commit）
 │   ├── sdd-feature-validator.md   # user story 驗收條件驗證（可執行測試與操作，不改原始碼）
 │   └── sdd-code-reviewer.md       # 憲章合規 + 品質 + 漣漪效應 code review（唯讀）
@@ -102,6 +103,7 @@ sdd-harness/
     ├── install.sh                 # 冪等安裝（symlink skill、agents、sdd-baseline 到 ~/.claude/）
     ├── copy-baseline.sh           # 把憲章來源（sdd-baseline 副本或自訂憲章）複製到目標專案並確保 manifest
     ├── detect-stage.sh            # 續跑階段偵測（state file + 檔案系統啟發法）
+    ├── task-plan.py               # task 粒度全域並行規劃：衝突判定、分批、涵蓋率核對（步驟 8 的 0P 與完成報告）
     └── enable-autocommit.sh       # 啟用 spec-kit git extension 的階段 auto-commit
 ```
 
@@ -119,9 +121,11 @@ sdd-harness/
   單一寫入；完成後先由
   `sdd-feature-validator` 逐條驗收、再由 `sdd-code-reviewer` 審查憲章合規與漣漪效應，
   全數通過才 commit 繼續。
-- **並行規劃（觀察期）**：Foundational 完成後一次並行分析所有未完成 story 的寫入／讀取集合、
-  共用資源與契約變更，判定 story 間衝突並產出分組建議寫入狀態檔；執行仍逐 story 依序，
-  完成報告附「規劃誤判」統計，作為日後是否導入 worktree 並行實作的依據。
+- **並行規劃（觀察期，task 粒度）**：Setup 開工前依 phase 並行派 analyzer，逐 task 取得
+  寫入／讀取集合、共用資源、契約變更、task 相依與信心，由 `scripts/task-plan.py` 對全部
+  task 兩兩判定衝突（只算 task 相依；信心低＝落點要等別的 task 實作後才知道者，視為與全部
+  衝突），排出全域並行批次與關鍵路徑寫入 `parallel-plan.json` 與狀態檔；執行仍逐 phase
+  依序，完成報告附集合涵蓋率與可能漏判，作為日後是否導入並行實作的依據。
 - **人為 review 閘門用導覽簡報，不用長文**：spec／clarify／plan／analyze 四個閘門由
   `sdd-brief-writer` 產製 `specs/<NNN>/brief/feature-brief.html`，orchestrator 以 Artifact 發布並把
   判斷點直接作為 AskUserQuestion 的題目。簡報是入版控的中間產物，spec.md 仍是唯一權威。
