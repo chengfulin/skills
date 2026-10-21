@@ -121,6 +121,10 @@ phase／story 多 commit + 最後 `after_implement`。
 **只寫在 references/implement-loop.md**（SKILL.md 步驟 8 只留摘要），此處不重複。此處只記完成準則與不變量：
 
 - 影響邊界報告不寫檔、不入狀態檔——中斷後續跑時**重做**（唯讀、冪等）。
+- tasks.md 的 `[X]` 只由主對話依 implementer 回報勾選（單一寫入者）；
+  implementer 改動 tasks.md 即越界。
+- 未完成 story ≥2 時，第一個 story 開工前須有並行規劃 commit 與
+  `steps.implement.parallel_plan`；觀察期內它**只是建議**，執行順序仍依 tasks.md。
 - 狀態檔 story 旗標：`steps.implement.stories.USk = {validated, reviewed, committed}`，
   在該 story 的 commit **之前**更新。
 - 修正迴圈上限 3 輪（含 reviewer 修正後的 validator 回歸，與 Polish 階段
@@ -188,6 +192,15 @@ story 迴圈。
       "stories": {
         "US1": {"validated": true, "reviewed": true, "committed": true},
         "US2": {"validated": false, "reviewed": false, "committed": false}
+      },
+      "parallel_plan": {
+        "advisory": true,
+        "stories": ["US1", "US2", "US3"],
+        "basis": "codegraph",
+        "groups": [["US1"], ["US2", "US3"]],
+        "conflicts": [
+          {"a": "US1", "b": "US2", "type": "契約", "evidence": "US1 在 IPaymentAdapter 加 refund()，US2 新增其實作"}
+        ]
       }
     }
   },
@@ -205,6 +218,12 @@ story 迴圈。
 **更新時機**：在執行該階段/story 的 commit **之前**更新旗標，讓狀態檔隨同一個
 commit 入版控（收尾必須 working tree 乾淨，不允許 commit 後再補寫狀態檔）。
 不記 commit sha——需要時以 `git log --grep '（NNN, USk）'` 或階段訊息回溯。
+
+`parallel_plan` 欄位（implement-loop.md 步驟 1P 寫入；未完成 story 少於 2 個時
+不建立）：`advisory` 觀察期恆為 true；`stories`＝規劃涵蓋的 story；`basis` 取
+`codegraph`／`grep`／`greenfield`（各 story 中最弱者）；`groups` 依群組順序，
+同組＝判定可並行；`conflicts[].type` 取 `寫入`／`相依`／`資源`／`契約`／`宣告`／
+`未定`。重規劃回到步驟 8 前刪除此欄位（任務已變，規劃失效）。
 
 `brief` 欄位（選填）：導覽簡報首次以 Artifact 工具發布成功時寫入 `artifact_url`，
 供跨 session 續跑時更新同一頁（程序見 references/review-gate.md）；Artifact
@@ -258,12 +277,14 @@ commit 入版控（收尾必須 working tree 乾淨，不允許 commit 後再補
 6. 向使用者回報偵測結果（「偵測到：<階段> 已完成，將從 <下一階段> 續跑」），
    確認後繼續；不重做已完成階段。
 7. 特例：`detected_stage=implement` 時，從狀態檔找出第一個未完成的 story，
-   並向使用者列出已完成/待做的 story 清單。
+   並向使用者列出已完成/待做的 story 清單。Foundational（無則 Setup）已 commit、
+   未完成 story ≥2 而 `parallel_plan` 缺失或未涵蓋全部未完成 story → 先補做
+   implement-loop.md 步驟 1P 再進 story 迴圈。
 
 ## 錯誤處理細則（SKILL.md「錯誤處理」引用，本節為唯一版本）
 
 - **subagent 回報無法判讀**（Agent 呼叫失敗，或回報缺「審查結論／驗證結論／影響
-  邊界報告」標頭）→ 以原 prompt 重派一次；仍失敗 → 一律**視同該閘門 FAIL**
+  邊界報告／並行規劃集合」標頭）→ 以原 prompt 重派一次；仍失敗 → 一律**視同該閘門 FAIL**
   （不得腦補為通過），計入 3 輪上限並依 SKILL.md 通用規則 4 處理。
   回報**超長但有效** → 依 model-dispatch.md §5 要求重整一次，不照單全收。
 - **憲章來源不可用**（`check_baseline=absent` 且使用者未在 prompt 提供自訂憲章）
@@ -275,14 +296,20 @@ commit 入版控（收尾必須 working tree 乾淨，不允許 commit 後再補
   決定續用或中止。
 - **sdd-implementer 失敗或回報無法判讀**：它可能已寫入部分檔案——先查
   `git status` 現況，再以原 prompt **重派續作**（prompt 註明「前次中斷，
-  tasks.md 勾選與現有 diff 為現況，續作未完成任務」）；仍失敗 → 半成品依上方
+  現有 diff 為現況；tasks.md 只勾了已確認完成的任務，未勾任務請比對 diff 判斷
+  進度後續作，回報本次確認完成的全部任務 ID」）；仍失敗 → 半成品依上方
   dirty tree 分類表處理（產品程式碼不補 commit），並問使用者。
 
 ## 完成報告（SKILL.md 引用，本節為唯一版本）
 
 全流程結束時向使用者總結：feature 名稱與分支、各階段 commit 一覽
 （`git log --oneline`）、驗收結果摘要（幾條 PASS）、審查發現與處理、
-已知偏差（若有）、建議後續（push / PR / 下一個 feature）。建議後續固定附兩條
+已知偏差（若有）、建議後續（push / PR / 下一個 feature）。
+
+有 `parallel_plan` 時另附**並行規劃觀察**（供評估是否導入並行實作）：群組數與
+可並行 pair 數、衝突類型分布，以及**規劃誤判**——對每組被判可並行的 pair，以
+`git log --grep '（NNN, USk）' --name-only --format=` 取兩者實際變更檔案，有交集即
+列出（檔案＋pair）；漏判的檔案若屬共用資源或契約，一併註明類別。建議後續固定附兩條
 提醒：
 
 1. `.specify/memory/baseline/` 含憲章基線副本（來源記於其 `manifest.json`），

@@ -25,7 +25,9 @@ sdd-harness（orchestrator skill）
    │  6  /speckit.tasks ──────────────────────────────────── commit
    │  7  /speckit.analyze ─ [sdd-spec-clarifier] 一致性檢核
    │        → 簡報列發現表 → 使用者同意修正 ───────────────── commit（恆有：至少狀態檔）
-   │  8  /speckit.implement ─ codegraph 建索引後逐 user story：
+   │  8  /speckit.implement ─ codegraph 建索引；Foundational 後並行派
+   │        [sdd-impact-analyzer]（plan 模式）產出 story 並行分組建議 ── commit
+   │        之後逐 user story：
    │        [sdd-impact-analyzer] 影響邊界 → [sdd-implementer] 實作（限定邊界）→
    │        [sdd-feature-validator] 驗收 → [sdd-code-reviewer] 審查（含漣漪檢查）
    │        → 通過才 commit → codegraph sync
@@ -81,7 +83,7 @@ sdd-harness/
 ├── agents/                        # 六個 subagent（以 scripts/install.sh 連到 ~/.claude/agents/）
 │   ├── sdd-spec-clarifier.md      # 規格/計畫 對憲章的對抗式審查（唯讀）
 │   ├── sdd-brief-writer.md        # 人為 review 閘門的功能導覽簡報（HTML；只寫 feature 的 brief/）
-│   ├── sdd-impact-analyzer.md     # story 開工前的影響邊界分析（唯讀，codegraph）
+│   ├── sdd-impact-analyzer.md     # story 開工前的影響邊界分析＋並行規劃集合（唯讀，codegraph）
 │   ├── sdd-implementer.md         # implement 階段的獨立 context 實作（寫碼與測試，不 commit）
 │   ├── sdd-feature-validator.md   # user story 驗收條件驗證（可執行測試與操作，不改原始碼）
 │   └── sdd-code-reviewer.md       # 憲章合規 + 品質 + 漣漪效應 code review（唯讀）
@@ -113,9 +115,13 @@ sdd-harness/
   不會自動執行；本 skill 以 `enable-autocommit.sh` 逐項啟用 `after_*` 事件，
   orchestrator 在每階段收尾主動執行並驗證，缺漏時手動補 commit。
 - **實作階段逐 story 把關**：每個 user story 開工前由 `sdd-impact-analyzer` 產出影響邊界報告；
-  實作由 `sdd-implementer` 在獨立 context 執行（主對話只保留閘門）；完成後先由
+  實作由 `sdd-implementer` 在獨立 context 執行，只回報完成的任務 ID，tasks.md 勾選由主對話
+  單一寫入；完成後先由
   `sdd-feature-validator` 逐條驗收、再由 `sdd-code-reviewer` 審查憲章合規與漣漪效應，
   全數通過才 commit 繼續。
+- **並行規劃（觀察期）**：Foundational 完成後一次並行分析所有未完成 story 的寫入／讀取集合、
+  共用資源與契約變更，判定 story 間衝突並產出分組建議寫入狀態檔；執行仍逐 story 依序，
+  完成報告附「規劃誤判」統計，作為日後是否導入 worktree 並行實作的依據。
 - **人為 review 閘門用導覽簡報，不用長文**：spec／clarify／plan／analyze 四個閘門由
   `sdd-brief-writer` 產製 `specs/<NNN>/brief/feature-brief.html`，orchestrator 以 Artifact 發布並把
   判斷點直接作為 AskUserQuestion 的題目。簡報是入版控的中間產物，spec.md 仍是唯一權威。
