@@ -20,7 +20,9 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 
 | 檔案 | 說明 |
 |------|------|
-| `SKILL.md` | orchestrator 主規則：6 階段＋選配的交接 SDD、通用規則、每步驟指示 |
+| `SKILL.md` | orchestrator 主規則：6 階段＋選配的交接 SDD、通用規則（含派工與模型對照表）、每步驟指示 |
+| `agents/mockup-brief-writer.md` | 步驟 2 的 subagent：讀 storyboard 推導畫面、狀態、假資料寫成 brief（sonnet + high；v1 覆寫 opus） |
+| `agents/mockup-consistency-checker.md` | 步驟 5 的 subagent：獨立 context 檢核凍結 mockup 與 storyboard 的一致性，含 Chrome 操作驗證（sonnet + high；交接版覆寫 opus） |
 | `references/workflow-stages.md` | 各階段完成準則、狀態檔 schema、續跑規則 |
 | `references/design-brief.template.md` | mockup 製作指示（brief）模板 |
 | `references/artifact-mockup.md` | 製作、發布、迭代、凍結、取留言、操作驗證程序與實測踩過的坑 |
@@ -29,6 +31,7 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 | `references/revisions.template.md` | 版本 ↔ 回饋 ↔ User Story ↔ 畫面 對照表 |
 | `references/sdd-handoff.md` | 步驟 7 交接 SDD：前提、截圖、sdd-input、PM 補答、開發回寫 |
 | `references/sdd-handoff-templates/` | 交接包範本：`spec-source-template.md`（spec 規格來源段）、`sdd-source-instructions.template.md`（sdd-harness 各階段補充指示）、`sdd-input.template.md`、`sdd-start.template.md`（開發者啟動說明） |
+| `scripts/install.sh` | 冪等安裝：symlink skill、agents 到 `~/.claude/`，順帶連上同 repo 的 `make-storyboard` |
 | `scripts/mockup-root.sh` | 解析產物根目錄（讀 `.make-mockup.json`，預設 `make-mockups/`） |
 | `scripts/detect-stage.sh` | 續跑偵測：讀狀態檔印出階段與下一步 |
 | `scripts/ingest-export.sh` | 把凍結的 mockup 歸檔到 `mockups/v<N>/` 並寫 export.json（來源網址、版本 id、sha256），拒絕覆蓋凍結版 |
@@ -58,9 +61,13 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 ## 安裝
 
 ```bash
-ln -s "$(pwd)/skills/make-mockup-harness" ~/.claude/skills/make-mockup-harness
-ln -s "$(pwd)/skills/make-storyboard"     ~/.claude/skills/make-storyboard
+bash skills/make-mockup-harness/scripts/install.sh
 ```
+
+冪等安裝：把 `skills/make-mockup-harness` symlink 到 `~/.claude/skills/`、`agents/*.md` 逐檔 symlink 到
+`~/.claude/agents/`（Claude Code 只從該處載入 subagent）；同 repo 的 `make-storyboard` 尚未安裝時一併連上。
+重複執行安全；repo 移動位置後重跑即可修復連結。執行中的 session 要到下一輪對話才會載入新裝的 agent
+（2026-10-21 實測：同一輪派遣回 not found，下一輪即可用）；步驟 0 的 `check_agents` 只檢查檔案存在。
 
 ## 使用方式
 
@@ -77,6 +84,7 @@ ln -s "$(pwd)/skills/make-storyboard"     ~/.claude/skills/make-storyboard
 make-mockups/<slug>/
 ├── storyboard.md              # 唯一權威，含版本化變更紀錄
 ├── briefs/v<N>-design-brief.md
+├── briefs/v<N>-research.md    # 假資料涉及真實事實時的查證結果與來源（沒有就不產）
 ├── mockup-src/index.html      # 製作中的工作檔（發布到同一 artifact，隨凍結 commit 入版）
 ├── mockups/v<N>/index.html    # 凍結版 + export.json（來源網址、版本 id、sha256）
 ├── reviews/v<N>-consistency.md
@@ -110,3 +118,9 @@ handoff/v<N>/
 - `/design` 是 slash command，只能由使用者輸入，產出是 artboard 畫布、只能匯出 PNG／PDF，
   接不上凍結與操作驗證，只當選配的視覺參考。
 - 每個畫面標 `data-page`，檢核與截圖都靠它定位；操作驗證在本機開啟凍結檔做，驗的是 repo 裡的版本。
+- brief 推導與一致性檢核交給獨立 subagent，mockup 由主對話製作：產出者與驗收者不同 context，
+  主對話做了 mockup 就不能自己檢核。模型預設 sonnet + high，只在 v1 brief（畫面拆解屬架構判斷）與
+  交接版檢核（交接後鎖定、誤判代價最高）逐次升 opus；effort 無法逐次覆寫，所以需要自訂 agent 定義檔。
+  subagent 不問使用者、不派 subagent，問題整理成選項交回 orchestrator 轉問。
+  改版時以既有專案回歸驗證：製作者自檢的報告全數通過，獨立 checker 以較少的操作數抓到自檢漏掉的
+  反向案例（已成立狀態下再操作一次），因此 checker 定義檔要求互動規則測正反兩面。

@@ -73,6 +73,16 @@ Claude Design 已併入 Claude，設計改存成 artifact；獨立網站 claude.
 - 高 DPR 螢幕的截圖可能出現畫面拼貼的假象，以 DOM 為準。
 - 以 `data-page` 定位畫面，比關鍵字計數可靠；關鍵字要用完整詞（「S1」這類短字串會在 JS 裡大量誤中）。
 
+獨立 checker 實測補充（2026-10-21）：
+- `javascript_tool` 的回傳值含 HTML 片段、style 或 `JSON.stringify` 結果時，可能被擋成
+  「[BLOCKED: Cookie/query string data]」——**腳本其實已執行**，不要原樣重跑（會重複改到頁面狀態）；
+  回傳改成純文字（`innerText`、`join('\n')`），不回傳 `outerHTML`。
+- mockup 的 JS 多半在閉包內，頁面函式（如 `openChar`）呼叫不到，一律透過 DOM 元素 `.click()`、
+  設值後 dispatch `input`／`change` 事件操作。
+- 腳本要用到的元素 id 先以 `extract-screens.sh` 的「id=」段或 `grep -o 'id="[^"]*"'` 取得。
+- 以 `run_in_background` 啟動的 `serve-mockup.sh` 在 `lsof -ti:8765 | xargs kill` 之後會收到 exit 143 的
+  失敗通知，屬預期，不是錯誤。
+
 ## 5. 與舊流程的差異
 
 | 項目 | 舊（Claude Design 網站） | 新（Artifact） |

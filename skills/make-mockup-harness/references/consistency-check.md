@@ -3,6 +3,9 @@
 目的：把「規格 vs mockup」的核對變成可重複的程序，產出五類報告，並把「待決定」送回
 storyboard。報告路徑：`make-mockups/<slug>/reviews/v<N>-consistency.md`。
 
+執行者：程序 1 到 5 由 `mockup-consistency-checker` subagent 在獨立 context 執行（它不是 mockup 的製作者）；
+程序 6 的使用者裁決由 orchestrator（SKILL.md 步驟 5）完成。
+
 ## 輸入
 - `storyboard.md`（當前版本）
 - `briefs/v<N>-design-brief.md`
@@ -36,9 +39,10 @@ storyboard。報告路徑：`make-mockups/<slug>/reviews/v<N>-consistency.md`。
 5. **待決定**
    凡是需要業務決策才能定案的（例如狀態優先序、刪除後資料處置、權限邊界），
    列成問題，每題給 2 到 3 個選項與建議。
-6. 用 AskUserQuestion 逐題請使用者裁決，把答案填進報告「裁決」欄。
-   「規格需修正」與「mockup 已有但規格未寫」的項目若當場一併裁決，在原表的處置欄寫裁決結果即可，
-   不必再抄進「待決定」表；「待決定」只放需要業務決策、原表放不下的問題。
+6. **裁決（orchestrator）**：checker 寫報告時「裁決」欄填 `待裁決`，並把每題以
+   「問題｜選項（標建議）｜影響」回報；orchestrator 用 AskUserQuestion 逐題請使用者裁決，把答案填進「裁決」欄。
+   「規格需修正」與「mockup 已有但規格未寫」的項目由 checker 在原表寫建議處置，不再抄進「待決定」表；
+   「待決定」只放需要業務決策、原表放不下的問題。
 
 ## 報告格式
 

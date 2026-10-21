@@ -13,6 +13,7 @@ show() { local label="$1" re="$2" n="${3:-30}"
   grep -o -E "$re" "$f" | sed 's/^[[:space:]]*//' | sort | uniq -c | sort -rn | head -n "$n" || true; }
 show "data-page / data-screen / data-route" 'data-(page|screen|route|view)="[^"]+"'
 show "id=page-* / screen-* / view-*" 'id="(page|screen|view|route)[^"]*"'
+show "其他 id=（操作驗證腳本要用）" 'id="[^"]{1,30}"' 60
 show "href=#..." 'href="#[^"]{1,40}"'
 show "h1 / h2 文字" '<h[12][^>]*>[^<]{1,40}'
 show "nav / sidebar / menu 內文字" '<(a|button|li)[^>]*(nav|menu|sidebar|tab)[^>]*>[^<]{1,30}'

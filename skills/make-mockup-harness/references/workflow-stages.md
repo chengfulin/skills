@@ -56,6 +56,7 @@
 - `briefs/v<N>-design-brief.md` 存在，畫面清單每項都標了對應 `US-nn`。
 - 每個 storyboard User Story 至少對應一個畫面，否則 brief 要寫明為何不需畫面。
 - N ≥ 2 時有「本版異動」段落。
+- brief 內沒有殘留 `（未查證）`；有查證過的欄位時 `briefs/v<N>-research.md` 存在並附來源。
 - 使用者已確認。狀態檔 `stage: brief`，`versions[N-1].brief` 填入。
 
 ### §3 製作 mockup
@@ -71,7 +72,7 @@
 
 ### §5 一致性檢核
 - `reviews/v<N>-consistency.md` 存在，五個分類段落與「操作驗證」段皆在（可為「無」）。
-- 「待決定」每題都有「裁決」欄，值為使用者答案或「延後」。
+- 「待決定」每題都有「裁決」欄，值為使用者答案或「延後」；不得殘留 `待裁決`。
 - 狀態檔 `stage: review`。
 
 ### §6 回饋回寫
