@@ -35,6 +35,7 @@
        ├── _shared/spec-source-template.md
        ├── _shared/sdd-source-instructions.md # 已代入 slug、版本
        └── <slug>/v<N>/
+           ├── index.md                       # 規格來源索引：每檔的媒材、取證方式、涵蓋範圍；script 產生，涵蓋欄本步驟核對
            ├── storyboard.md
            ├── sdd-input.md                   # 骨架，本步驟填
            ├── prototype/{index.html, export.json, screens/}
@@ -55,7 +56,10 @@
      截圖前以 `javascript_tool` 讀 `innerWidth` 確認。
    - 拍完 kill 伺服器、關分頁。
 
-3. 填 `sdd-input.md` 其餘章節（模板已含填寫指引）。原則：
+3. 核對 `index.md` 並填 `sdd-input.md` 其餘章節（模板已含填寫指引）。
+   `index.md` 是開發端 clarifier 找來源的入口：script 自動抓的「涵蓋」欄（storyboard 的 US-nn、
+   mockup 的 `data-page` 畫面）要與 storyboard、brief 畫面清單一致，`{填：…}` 補齊；
+   不要刪列，也不要改取證方式欄。`sdd-input.md` 原則：
    - 驗收條件**原文搬移**，不改寫；每條標 US。
    - 一致性檢核「操作驗證」表改寫成 Given／When／Then，作為互動驗收（AC-P 系列）。
    - FR 候選每條標來源（US-nn 的規則／狀態／邊界、全域規則、brief 本版異動）。

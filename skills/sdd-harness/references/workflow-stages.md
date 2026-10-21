@@ -77,6 +77,8 @@ phase／story 多 commit + 最後 `after_implement`。
   before_specify 的 `speckit.git.feature`（mandatory hook）建立）。
 - spec.md 經使用者 review 確認（SKILL.md 通用規則 7；閘門在 commit 之前，
   commit 即為已 review 的證據，不另設狀態旗標）。
+- `.specify/context/` 存在時：spec 引用的每個來源版本目錄含 `index.md`；spec 的
+  User Story／FR／驗收情境帶來源錨點（SKILL.md 步驟 3 第 2 點）。
 - `<feature 目錄>/brief/feature-brief.html` 與 `brief/README.md` 已建立
   （review-gate.md 觸發點 `spec`）並隨本階段 commit；簡報產製失敗而改用文字
   摘要完成閘門時例外，須已向使用者告知。
@@ -237,7 +239,7 @@ commit 入版控（收尾必須 working tree 乾淨，不允許 commit 後再補
    |----------|------|------|
    | constitution.md／baseline/／sdd-adoption.json／README 的「SDD 導入宣告」章節 | constitution | 提示使用者後補該階段 commit |
    | README 的其他章節 | 視內容 | 對得到當前 feature tasks.md 的任務 ID → 併入「產品程式碼」列處理（回 story 閘門）；對不到 → 併入「不明」列問使用者 |
-   | spec.md（新增） | specify | 同上 |
+   | spec.md（新增）、`.specify/context/<slug>/v<N>/index.md`（新增） | specify | 同上 |
    | spec.md（修改，含 Clarifications） | clarify | 同上 |
    | plan.md 與 research／data-model 等設計檔 | plan | 同上 |
    | tasks.md | tasks | 同上 |

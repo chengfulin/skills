@@ -21,9 +21,9 @@ speckit-implement 派 `sdd-implementer`，見步驟 8），而**釐清、影響�
   使用者在 prompt 指定自訂憲章（檔案、目錄或貼上內容）時以其為準。細節在
   constitution-assembly.md。
 - 上游需求資料：目標專案的 `.specify/context/`（PM 文件、StoryBoard、設計稿／Prototype、
-  外部權威；make-mockup-harness 的交接包也放在這裡）。步驟 3 寫 spec 時參照；
-  `sdd-spec-clarifier` 在步驟 4、7 逐例比對 spec 與這些來源（見其定義檔「上游資料一致性」）。
-  目錄不存在時照常進行。
+  外部權威；make-mockup-harness 的交接包也放在這裡）。每個來源版本目錄以 `index.md`
+  為索引、spec 以錨點指回來源（步驟 3）；`sdd-spec-clarifier` 在步驟 4、7 依索引與錨點
+  取片段逐例比對（見其定義檔「上游資料一致性」）。目錄不存在時照常進行。
 - 參考文件**按需讀取，不要一次全讀**（token 紀律）：
   - `$SKILL_DIR/references/workflow-stages.md`：完成準則、狀態檔 schema、續跑演算法
     ——步驟 0b 與每階段收尾時讀對應小節
@@ -222,10 +222,27 @@ speckit-constitution → 寫 README「SDD 導入宣告」與 `sdd-adoption.json`
 
 1. 使用者的需求描述不完整時，先問清楚：目的、主要使用者、成功的樣子（驗收觀點）。
    不問技術細節——那是步驟 5 的事。
-2. Read `.claude/skills/speckit-specify/SKILL.md`，inline 執行（需求描述代入
+2. **上游資料的索引與錨點**（`.specify/context/` 存在時；clarifier 靠這兩樣定讀取範圍）。
+   - 每批來源須有 `index.md`——每檔一列：路徑、媒材、大小、權威、取證方式（Read 全文／
+     只讀某節／看截圖／PDF 只看某幾頁／不整份 Read）、涵蓋（列到 US-nn、S<n>、§節、
+     p.頁的粒度，錨點要能在這欄找到）。位置：來源版本目錄（`<slug>/v<N>/`）內；來源不是
+     這種結構時放該批來源的最上層目錄。make-mockup-harness 交接包已附；沒有的（PM 直接
+     給 PDF、試算表、設計稿）派搜尋型 subagent 產草稿（只看檔名、標題、目錄頁與分頁
+     標題，不通讀內容），你核對後隨本步驟 commit。索引是衍生物，不是來源：在已入版控的
+     來源目錄**新增** `index.md` 不算違反來源唯讀，修改來源檔才算。
+   - spec 的每條 User Story、FR、驗收情境句尾標來源錨點，寫到能定位片段的粒度
+     （US、規則、畫面、頁、節），不引整份檔案。有交接包：慣例與機械檢查 8、9 在
+     `.specify/context/_shared/spec-source-template.md`。沒有交接包：你在 spec 開頭自建
+     最小「規格來源」段——來源表（簡稱、路徑、權威範圍）＋範圍對照（每個 User Story
+     對應的來源 §節／p.頁）；錨點用 `[SRC <簡稱> §<節>｜p.<頁>]`，spec 自行補上的用
+     `[G-n]`（來源缺口表）；檢查 8＝每條目至少一個錨點且能在 `index.md` 涵蓋欄找到，
+     檢查 9＝範圍對照的每個來源片段至少被一條引用。
+   - 一個 story 的錨點觸發 clarifier 的「範圍絆線」（條件見其定義檔審查程序 5）時，
+     先懷疑 story 切太大或索引太粗：問使用者拆 story 或補索引與錨點，不要叫 clarifier 少讀。
+3. Read `.claude/skills/speckit-specify/SKILL.md`，inline 執行（需求描述代入
    `$ARGUMENTS`）。其 mandatory hook `speckit.git.feature` 會建立 feature branch。
-3. **人為 review 閘門**（通用規則 7，觸發點 `spec`）：通過才往下。
-4. 建立 `.sdd-workflow.json`（`steps.specify.done=true`，發布成功時另記
+4. **人為 review 閘門**（通用規則 7，觸發點 `spec`）：通過才往下。
+5. 建立 `.sdd-workflow.json`（`steps.specify.done=true`，發布成功時另記
    `brief.artifact_url`）→ `after_specify` commit 驗證。
 
 ## 步驟 4：釐清（/speckit.clarify）

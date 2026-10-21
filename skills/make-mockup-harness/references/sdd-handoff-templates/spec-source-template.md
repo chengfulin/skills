@@ -1,4 +1,4 @@
-# spec.md「規格來源」範本段落（v3）
+# spec.md「規格來源」範本段落（v4）
 
 > 用途：feature 以 StoryBoard 與 Prototype 為依據時，放在 spec.md 開頭（`**Input**` 之後、`## Clarifications` 之前），為必填段落。
 > 來源：歸納多個以 StoryBoard 與設計稿為依據的 feature 實務：來源表與 StoryBoard 優先、第三方權威與部署後目視重做、版面依設計稿與偏離分類。
@@ -85,7 +85,16 @@
 - **StoryBoard 中不在本 feature 的 User Story**：{US-nn：理由；無則寫「無」}
 - **Prototype 中不在本 feature 的畫面或區塊**：{S<n> 或區塊名：理由；無則寫「無」}
 
+### 錨點慣例
+
+見 `.specify/context/_shared/spec-source-template.md`「錨點慣例（原文）」；本 spec 的錨點依該表，由機械檢查 8、9 守。
+
 ### 來源缺口
+| :---- | :---- | :---- |
+| `[SB US-nn]`、`[SB US-nn 規則 k]`、`[SB US-nn 狀態]`、`[SB US-nn 邊界 k]`、`[SB 全域規則 k]`、`[SB 資料關聯 k]` | StoryBoard 的 User Story／該 US「規則」清單第 k 條／其「狀態」項／「邊界情況」第 k 條／「全域規則」第 k 條／「資料關聯性」第 k 列 | `[SB US-02 規則 3]` |
+| `[P S<n>]`、`[P S<n>-<序號>]` | Prototype 畫面（範圍對照的 S<n>）／`screens/` 中檔名 `S<n>-<序號>-*.png` 的那張截圖 | `[P S1-03]` |
+| `[EXT <簡稱> §<節>｜p.<頁>]` | 來源表「外部權威」列的文件，只到節或頁 | `[EXT 法規 §12]` |
+| `[IN Q<n>]`、`[IN AC-<id>]` | 同目錄 `sdd-input.md` 的補問清單答案／驗收條件原文（含 `AC-P` 系列） | `[IN AC-P1]` |
 
 <!-- 來源未定義、由 spec 補上的項目。每條必須是已決處置並指向 FR；
      尚未決定的寫 [NEEDS CLARIFICATION: …]，clarify 後不得殘留。無則寫「無」。 -->
@@ -122,7 +131,30 @@
 5. 來源缺口與偏離登記不含 `[NEEDS CLARIFICATION`（clarify 之後）。
 6. Clarifications 與 ui-contracts 引用的 D-ID 都存在於偏離登記。
 7. 權威劃分五條原文未被改動；與五條不同的做法都有對應的 X-ID，且每列的提出者與裁決日期非空。
+8. spec 每條 User Story、FR、AC／SC 至少一個錨點，且每個錨點只用 spec 與 `index.md` 就能解析：`SB`／`P`／`EXT`／`SRC`
+   指到的 US-nn、S<n>、§節、p.頁出現在來源目錄 `index.md` 的「涵蓋」欄（`EXT`／`SRC` 的簡稱在來源表）；`IN` 指同目錄
+   `sdd-input.md` 的 Q<n>／AC-<id>；`[G-n]`／`[D-n]` 存在於本 spec 的對應表。
+9. 範圍對照的每個 US-nn 與 S<n> 至少被一條 User Story 或 FR 的錨點引用。
 <!-- spec-source:end -->
+
+---
+
+## 錨點慣例（原文）
+
+spec 內只留指標，本節是唯一版本。spec 每條 User Story、FR、驗收情境（AC／SC）句尾至少一個錨點，可多個；
+沒有上游依據的標 `[G-n]` 或 `[D-n]`。錨點是 clarifier 的讀取範圍：比對某 story 時只開其錨點指到的片段，
+所以要寫到能定位片段的粒度（US、規則、畫面、頁、節），不引整份檔案；錨點必須能在來源目錄 `index.md` 的「涵蓋」欄找到。
+
+| 錨點 | 指向 | 例 |
+| :---- | :---- | :---- |
+| `[SB US-nn]`、`[SB US-nn 規則 k]`、`[SB US-nn 狀態]`、`[SB US-nn 邊界 k]`、`[SB 全域規則 k]`、`[SB 資料關聯 k]` | StoryBoard 的 User Story／該 US「規則」清單第 k 條／其「狀態」項／「邊界情況」第 k 條／「全域規則」第 k 條／「資料關聯性」第 k 列 | `[SB US-02 規則 3]` |
+| `[P S<n>]`、`[P S<n>-<序號>]` | Prototype 畫面（範圍對照的 S<n>）／`screens/` 中檔名 `S<n>-<序號>-*.png` 的那張截圖 | `[P S1-03]` |
+| `[EXT <簡稱> §<節>｜p.<頁>]` | 來源表「外部權威」列的文件，只到節或頁；簡稱登記在來源表「來源」欄 | `[EXT 法規 §12]` |
+| `[IN Q<n>]`、`[IN AC-<id>]` | 同目錄 `sdd-input.md` 的補問清單答案／驗收條件原文（含 `AC-P` 系列） | `[IN AC-P1]` |
+| `[G-n]`、`[D-n]` | 本 spec 的來源缺口／偏離登記第 n 筆（spec 自身，不是上游；clarify 改變規則的也是 D-ID） | `[G-1]` |
+| `[SRC <簡稱> §<節>｜p.<頁>]` | 沒有 StoryBoard、只有自由格式需求文件時用 | `[SRC PRD §3.2]` |
+
+FR 寫法示例：「FR-003 列表依到期日升冪，同日依帳號名稱 `[SB US-02 規則 2]` `[P S1-02]`」；「FR-007 載入失敗顯示站內錯誤元件 `[G-2]`」。
 
 ---
 
@@ -173,12 +205,16 @@
 - **StoryBoard 中不在本 feature 的 User Story**：無。
 - **Prototype 中不在本 feature 的畫面或區塊**：側欄「訂閱盤點」以外的選單項目（僅外框展示）。
 
+### 錨點慣例
+
+見 `.specify/context/_shared/spec-source-template.md`「錨點慣例（原文）」；本 spec 的錨點依該表，由機械檢查 8、9 守。
+
 ### 來源缺口
 
 | # | 缺口 | 處置 | 對應 |
 | :---- | :---- | :---- | :---- |
-| G-1 | 資料來源：StoryBoard 註明「未來由 API 提供，本階段以假資料展示」 | 本階段以前端 mock 資料層提供，假資料取自 Prototype；頁面只經資料存取層取用 | FR-0xx |
-| G-2 | 載入中與載入失敗狀態：Prototype 未畫出 | 依專案既有元件補齊 | FR-0xx |
+| G-1 | 資料來源：StoryBoard 註明「未來由 API 提供，本階段以假資料展示」 | 本階段以前端 mock 資料層提供，假資料取自 Prototype；頁面只經資料存取層取用 | FR-010 |
+| G-2 | 載入中與載入失敗狀態：Prototype 未畫出 | 依專案既有元件補齊 | FR-007 |
 
 ### 偏離登記
 

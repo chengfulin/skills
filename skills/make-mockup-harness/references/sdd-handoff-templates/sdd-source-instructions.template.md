@@ -17,8 +17,10 @@
    不在任何階段改寫。業務規則看 StoryBoard，呈現看 Prototype，兩者沒定義的依專案慣例補齊並登記「來源缺口」。
 4. 偏離只登記在 spec.md「偏離登記」表（D-ID）；與 StoryBoard 明文不同的處置必須同時登記例外（X-ID）。
    Clarifications 與 `contracts/ui-contracts.md` 只引用 D-ID，不另寫一份。
-5. 派遣任何 subagent 時，附件欄一律加上：`sdd-input.md` 路徑、本 story 相關的截圖檔名、
+5. 派遣任何 subagent 時，附件欄一律加上：`index.md` 與 `sdd-input.md` 路徑、本 story 相關的截圖檔名、
    `spec.md` 規格來源段的位置。不要把 `prototype/index.html` 當附件。
+6. 找來源的順序固定：先讀 `.specify/context/{slug}/v{N}/index.md`（每檔的取證方式與涵蓋範圍），
+   再依 spec 的錨點（`_shared/spec-source-template.md`「錨點慣例（原文）」）只取指到的片段。不 `ls` 目錄逐檔開、不整份讀來源。
 
 ## 1. 步驟 3 specify
 
@@ -26,19 +28,22 @@
   - `**Input**` 一行寫「規格來源：StoryBoard v{N} ＋ Prototype v{N}（見下方規格來源段）」。
   - 緊接著插入 `spec-source-template.md` 的「規格來源」段，填齊來源表（路徑、完整 64 碼 sha256）、
     設計系統模式、範圍對照、來源缺口；偏離登記先寫「無」。
-  - User Story 依 `sdd-input.md` 的 US 對照表編號與優先序，每個 story 標「來源：US-nn」與「畫面：S<n>」。
-  - 驗收條件（AC-01…）**原文搬移**，不改寫；Prototype 操作驗證轉來的條目（AC-P1…）也納入。
-  - FR 依 `sdd-input.md` 的 FR 候選展開並編號，每條保留來源標註。
+  - User Story 依 `sdd-input.md` 的 US 對照表編號與優先序，每個 story 句尾標錨點 `[SB US-nn]` `[P S<n>]`。
+  - 驗收條件（AC-01…）**原文搬移**，不改寫，句尾標 `[IN AC-01]`；Prototype 操作驗證轉來的條目（AC-P1…）也納入，標 `[IN AC-P1]` 與對應截圖 `[P S<n>-<序號>]`。
+  - FR 依 `sdd-input.md` 的 FR 候選展開並編號，每條句尾把來源標註寫成錨點
+    （`[SB US-nn 規則 k]`、`[SB 全域規則 k]`、`[P S<n>]`、`[IN Q<n>]`；慣例見 `_shared/spec-source-template.md`「錨點慣例（原文）」）。
+    錨點是 clarifier 的讀取範圍，寫到能定位片段的粒度，不引整份檔案。
   - `sdd-input.md`「已定案決策」預填進 Clarifications；「範圍外」寫進 Assumptions。
   - `sdd-input.md`「補問清單」已有 PM 答案的直接採用並記入 Clarifications；沒有答案的寫
     `[NEEDS CLARIFICATION: …]`，留給步驟 4。
-- 產 spec 後自行跑一次規格來源段的機械檢查 1～7，不過就先修。
+- 產 spec 後自行跑一次規格來源段的機械檢查 1～9，不過就先修。
 - 人為 review 閘門：簡報附 `prototype/screens/` 截圖，讓 reviewer 對照。
 
 ## 2. 步驟 4 clarify
 
 - 派 `sdd-spec-clarifier` 時，附件加一條檢查要求：spec 是否涵蓋 StoryBoard 每條規則與驗收條件、
-  每個 User Story 是否標出畫面；遺漏列 HIGH。
+  每個 User Story 是否標出畫面；遺漏列 HIGH。它會依 `index.md` 與錨點定範圍；
+  若回報「來源範圍超出上限」，依其原因處理（補錨點／拆 story），不要叫它少讀。
 - 問題佇列先分類：
   - **互動類**（StoryBoard 沒寫、Prototype 有做的行為）：先開啟 Prototype 實際操作，依權威劃分第 2 條
     以 Prototype 為準直接裁決，寫入 Clarifications 並註明「依 Prototype 操作結果」。不問使用者。
@@ -65,7 +70,7 @@
 ## 4. 步驟 6 tasks、步驟 7 analyze
 
 - 前端任務以畫面為單位，每個任務標 `S<n>`、`US<k>`，並引用 `ui-contracts.md` 對應章節。
-- analyze 時派 `sdd-spec-clarifier`（full）加做規格來源段機械檢查 1～7；第 7 條比對
+- analyze 時派 `sdd-spec-clarifier`（full）加做規格來源段機械檢查 1～9；第 7 條比對
   `.specify/context/_shared/spec-source-template.md` 原文。
 
 ## 5. 步驟 8 implement

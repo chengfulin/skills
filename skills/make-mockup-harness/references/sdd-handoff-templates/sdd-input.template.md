@@ -16,18 +16,10 @@
 | StoryBoard 自身一致性（狀態轉換 vs 全域規則） | {已檢查，無矛盾 ｜ 發現：…，已於 v{N} 修正 ｜ 發現：…，列為已知缺口} |
 | Prototype 有實作、StoryBoard 未寫的業務規則 | {無 ｜ 有：…，處置：補進 storyboard／列為已知缺口} |
 
-## 檔案清單
+檔案清單見同目錄 `index.md`（每檔的媒材、大小、權威、取證方式、涵蓋的 US／畫面；sha256 也在那裡）。
+找來源一律從 `index.md` 開始，`prototype/index.html` **不得整份 Read**。
 
-| 檔案 | 說明 | 權威 |
-|---|---|---|
-| `storyboard.md` | StoryBoard v{N} 原檔（sha256 {sha_storyboard}） | 業務規則 |
-| `prototype/index.html` | Prototype v{N} 單檔 HTML（約 {proto_size}，**不得整份 Read**；以截圖、限量 grep 或本機開啟操作取證） | 呈現 |
-| `prototype/export.json` | mockup 凍結紀錄（來源 artifact 網址、版本 id、sha256） | — |
-| `prototype/screens/*.png` | 1440×900、Chrome、full-page 截圖（衍生產物） | 無獨立權威 |
-| `reference/v{N}-design-brief.md` | Design Brief v{N}：畫面 ID、假資料表、展示腳本 | 參考 |
-| `reference/v{N}-consistency.md` | v{N} 一致性檢核報告（含操作驗證） | 參考 |
-
-### 截圖索引
+## 截圖索引
 
 <!-- 畫面 ID 沿用 Design Brief 的 S<n>。每個畫面至少一張預設狀態，加上每個互動後狀態
      （點卡片、套用篩選、空狀態、各類明細展開、錯誤或提示）。檔名 S<n>-<兩位序號>-<狀態>.png。 -->

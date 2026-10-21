@@ -24,8 +24,8 @@
 
 | 主題 | 條目 | 一句話 |
 |------|------|--------|
-| sdd-harness 的 context 用量 | L2、L3、L4、L5 | plan／tasks 不留主對話；大 story 分批；新任務派新 agent；上游資料限量取證 |
-| 規格與上游資料的一致性 | L1、L5 | 設計稿每個範例都要比對；版型看截圖不抽文字 |
+| sdd-harness 的 context 用量 | L2、L3、L4、L5 | plan／tasks 不留主對話；大 story 分批；新任務派新 agent；上游資料靠索引與錨點定範圍 |
+| 規格與上游資料的一致性 | L1、L5 | 設計稿每個範例都要比對；版型看截圖不抽文字；範圍超標是上游問題，反饋不砍 |
 | 驗證實驗的方法 | L6 | 知道答案的 orchestrator 不能替被測流程出題 |
 
 ---
@@ -95,14 +95,25 @@
 - 證據：同上各 agent 的 token 數。
 - 狀態：已升格 → `skills/sdd-harness/SKILL.md`#通用規則 8
 
-## L5：上游資料目錄很大，掃描沒有上限，版型類資料也不該靠抽文字（2026-10-20）
+## L5：上游資料目錄很大，clarifier 沒有可計算的讀取範圍，只能靠猜或靠砍（2026-10-20；2026-10-21 修訂）
 - 情境：同一實驗的 `.specify/context/` 約 9MB，含 PDF、試算表與單檔大型 HTML
   設計稿。
-- 錯誤行為：clarifier 定義檔沒有掃描上限，也沒規定各媒材怎麼取證。這次 agent
+- 錯誤行為：clarifier 定義檔沒規定怎麼找來源，也沒規定各媒材怎麼取證。這次 agent
   自行略過 PDF，但沒在回報中說明略過了什麼。報告版型與前端畫面若只靠抽出的
   文字比對，看不到哪些元素實際顯示。
-- 正確行為：深入比對最多 8 個來源檔；版型與畫面以截圖為首選，HTML 先比結構、
-  需要時用 headless 瀏覽器截圖，PDF 只看相關頁的影像；回報列出已比對與略過的
-  檔案及原因。
-- 證據：clarifier 改版前後的 token 數與回報內容。
-- 狀態：已升格 → `skills/sdd-harness/agents/sdd-spec-clarifier.md`#審查程序 5
+- 初版對策（已撤回）：「深入比對最多 8 個來源檔，依相關度挑選」。問題：上限只是
+  減少掃描，沒有讓範圍變正確；掃到爆的真正訊號是上游沒索引、或單一 story 範圍
+  太大，該反饋上游整理，不該往下砍。
+- 正確行為：讓讀取範圍可計算——來源版本目錄有 `index.md`（每檔的媒材、取證方式、
+  涵蓋的 US／畫面／章節），spec 每條 FR／AC 帶來源錨點，clarifier 依索引與錨點取
+  片段、不掃目錄；錨點缺失或範圍對照的畫面沒被引用都列 HIGH。8 改為絆線（每 story
+  計、單位是 index.md 索引列）：錨點太粗或超過 8 列，該 story 本輪不比對、列 HIGH 問
+  使用者（補索引與錨點、或拆 story），不挑一部分比對。8 沿用舊上限無依據，回報附每
+  story 的錨點目標數與索引列數，累積後再修。媒材取證規則
+  （截圖首選、HTML 不整份 Read、PDF 只看相關頁影像）保留——那是證據品質，不是範圍。
+- 證據：clarifier 改版前後的 token 數與回報內容；類比 codegraph——程式碼有
+  symbol→edge 的索引才有有界查詢，規格要有 FR→錨點的邊才有有界比對。
+- 狀態：已升格 → `skills/sdd-harness/agents/sdd-spec-clarifier.md`#審查程序 5、
+  `skills/sdd-harness/SKILL.md`#步驟 3、
+  `skills/make-mockup-harness/references/sdd-handoff-templates/spec-source-template.md`#錨點慣例、
+  `skills/make-mockup-harness/scripts/pack-sdd-handoff.sh`（產 `index.md`）
