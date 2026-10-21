@@ -85,6 +85,8 @@
 - CRITICAL 處理與修正同意走通用規則 7 閘門（觸發點 `analyze`）；處理完 →
   `replan.active=false`（`iteration`／`reason` 保留作歷史證據）→ 更新
   `steps.analyze` 計數 → `after_analyze` commit 驗證。
+- 處理完、commit 之前一併刪除 `steps.implement.parallel_plan`（任務已變，
+  規劃失效；回步驟 8 時由 implement-loop.md 步驟 1P 依新任務重做）。
 - 回 SKILL.md 步驟 8 story 迴圈：從第一個未完成 story（含本輪新增）繼續。
   已完成 story 的旗標不回退；rework 內容由新 story／新 task 的正常閘門
   （影響邊界 → 實作 → 越界檢查 → validator → reviewer → commit）把關。

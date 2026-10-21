@@ -95,6 +95,7 @@ speckit-implement 派 `sdd-implementer`，見步驟 8），而**釐清、影響�
    專案根（絕對路徑）：<...>（git 一律 -C <專案根>；codegraph 查詢類 --path <專案根>、status 用位置參數）
    feature 目錄：<specs/NNN-slug/>
    範圍/story：<spec-only | full | USk | all | phase 名>
+   模式（僅 impact-analyzer）：<boundary（預設） | plan>
    附件（視角色）：<初步假設 | 邊界報告指定小節 | 越界放行清單 | 前輪發現表>
    回報：依你定義檔的回報合約；結論行（PASS/FAIL、APPROVE/MUST-FIX…）必須存在
    ```
@@ -299,8 +300,10 @@ speckit-constitution → 寫 README「SDD 導入宣告」與 `sdd-adoption.json`
 ## 步驟 8：實作（/speckit.implement，逐 story 閘門）
 
 **Read `$SKILL_DIR/references/implement-loop.md`，全程照它執行**（進入本步驟時讀；
-每個 story 收尾前重讀其 checklist 節）。它定義索引準備、測試工具前置、逐 phase 的
-派遣與閘門順序（影響邊界 → implementer → 越界檢查 → validator → reviewer → commit）
+每個 story 收尾前重讀其 checklist 節）。它定義索引準備、測試工具前置、tasks.md
+勾選（implementer 只回報任務 ID，由你單一寫入）、Foundational 後的並行規劃
+（觀察期只產出分組建議，執行仍逐 story 依序）、逐 phase 的派遣與閘門順序
+（影響邊界 → implementer → 勾選 → 越界檢查 → validator → reviewer → commit）
 與 story 收尾 checklist；修正迴圈依通用規則 4（上限 3 輪）。
 
 ## 步驟 8R：重規劃閘門（僅在實作中發現規劃不可行時進入）
