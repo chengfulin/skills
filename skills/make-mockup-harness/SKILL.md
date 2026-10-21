@@ -9,9 +9,9 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, ToolSearch,
 
 你是這條流程的**指揮者**。在目標 repo 的 `make-mockups/<slug>/` 下，依序推進 6 個階段（加一個選配的交接 SDD 階段），
 確保每階段「完成準則滿足 → 狀態檔更新 → commit」後才前進。
-storyboard 是唯一權威；mockup 是 storyboard 的呈現，由你依 brief 製作並發布成 artifact；每個 mockup 版本一旦 commit 即凍結。
+storyboard 是唯一權威；mockup 是 storyboard 的呈現，由 `mockup-builder` 依 brief 與 build request 產出、你審過後發布成 artifact，每次產出都以 build id 留下輸入與產出紀錄；每個 mockup 版本一旦 commit 即凍結。
 
-- `$SKILL_DIR` 指本 SKILL.md 所在目錄。兩個 subagent 的定義檔在 `$SKILL_DIR/agents/`，
+- `$SKILL_DIR` 指本 SKILL.md 所在目錄。三個 subagent 的定義檔在 `$SKILL_DIR/agents/`，
   Claude Code 只從 `~/.claude/agents/` 載入——以 `bash $SKILL_DIR/scripts/install.sh` 建立連結（步驟 0 會檢查）。
 - **mockup 根目錄**預設 `make-mockups/`，可由 repo 根的 `.make-mockup.json`（`{"root":"..."}`）覆寫；
   下文所有 `make-mockups/<slug>/...` 路徑都以實際根目錄代入，script 會自行讀設定。
@@ -22,6 +22,7 @@ storyboard 是唯一權威；mockup 是 storyboard 的呈現，由你依 brief �
     ——步驟 1 與步驟 6 以 Read-照做方式 inline 執行
   - `references/design-brief.template.md`：brief 模板——由 `mockup-brief-writer` 讀，主對話不必讀
   - `references/artifact-mockup.md`：mockup 製作、發布、迭代、凍結、取留言與操作驗證——步驟 3、4 讀
+  - `references/mockup-build.md`：build 的 request／產出紀錄／索引格式與 build id 規則——步驟 3 讀
   - `references/legacy-claude-design-handoff.md`：只在狀態檔有 `claudeDesign.projectUrl` 的舊專案收尾時讀
     （claude.ai/design 於 2026-12-14 關閉）
   - `references/consistency-check.md`：檢核程序與五類報告格式——由 `mockup-consistency-checker` 讀；
@@ -38,7 +39,7 @@ storyboard 是唯一權威；mockup 是 storyboard 的呈現，由你依 brief �
 | 0 | 前置／續跑 | 工具檢查、決定 slug、讀狀態檔從中斷點繼續 | — | — |
 | 1 | Story Board | 以 `make-storyboard` 初版模式討論並產出 storyboard.md | 使用者確認 storyboard | ✅ |
 | 2 | Design Brief | 派 `mockup-brief-writer` 由 storyboard 推導畫面、角色、狀態、假資料 | 使用者確認 brief | ✅ |
-| 3 | 製作 mockup | 依 brief 寫互動 HTML、發布成私人 artifact；依 SA 回饋迭代 | 使用者說「凍結」才結束 | — |
+| 3 | 製作 mockup | 寫 build request 派 `mockup-builder` 產出 HTML、審過後發布成私人 artifact；SA 回饋一律開新 build | 使用者說「凍結」才結束 | — |
 | 4 | 凍結 | 取回已發布版本 → 歸檔 → 取留言 | — | ✅ |
 | 5 | 一致性檢核 | 派 `mockup-consistency-checker` 以 storyboard 對照 mockup，產五類報告 | 待決定項目請使用者裁決；選擇升版或交接 | ✅ → 步驟 6 或 7 |
 | 6 | 回饋回寫 | 以 `make-storyboard` 升版模式寫回 storyboard，更新 revisions.md | 逐條確認歸類 | ✅ → 回步驟 2 |
@@ -48,7 +49,7 @@ storyboard 是唯一權威；mockup 是 storyboard 的呈現，由你依 brief �
 
 1. **storyboard 唯一權威**：任何來自迭代對話、artifact 留言或客戶的**規則、範圍、狀態**變更，先寫進
    storyboard 的「變更紀錄」與對應 User Story，再改 mockup 或產新 brief。不得直接改 mockup 了事；
-   純呈現（版面、配色、文案措辭）可在步驟 3 直接改。
+   純呈現（版面、配色、文案措辭）可在步驟 3 直接開 patch build 改。
    v<N> mockup 尚未凍結前發現 storyboard 有誤（例如查證後事實不符），可在 v<N> 內更正，
    變更紀錄 v<N> 列的摘要補註更正內容並另立 commit，不必升版。
 2. **凍結規則**：`make-mockups/<slug>/mockups/v<N>/` 一旦 commit 不得修改；新需求一律升版。
@@ -70,15 +71,17 @@ storyboard 是唯一權威；mockup 是 storyboard 的呈現，由你依 brief �
    （`$TOP`、`$ROOT` 每次依步驟 0 的方式重新取得，shell 變數不會跨呼叫保留。）
 7. **狀態檔** `make-mockups/<slug>/.mockup-workflow.json` 依 workflow-stages.md 的 schema 維護，
    旗標在 commit **之前**更新。
-8. **派工與模型**：主對話只做決策、閘門、製作 mockup（步驟 3）、commit 與使用者互動；
-   brief 的推導與一致性檢核派 subagent，產出者與驗收者必須是不同 context
-   （brief 由 writer 寫、mockup 由主對話做、檢核由 checker 做——主對話做了 mockup 就不能自己檢核）。
+8. **派工與模型**：主對話只做決策、閘門、寫 build request、發布、commit 與使用者互動；
+   brief 推導、mockup 製作與一致性檢核都派 subagent，產出者與驗收者必須是不同 context
+   （brief 由 writer 寫、mockup 由 builder 做、檢核由 checker 做）。主對話**不直接編輯 mockup HTML**，
+   任何修改都經 build request，才能以 build id 追溯與回退。
    通用守則見同 repo `sdd-harness/references/model-dispatch.md`；本 skill 的對照表：
 
    | 任務 | agent／model | 逐次覆寫（Agent 工具的 `model` 參數） |
    |------|-------------|------------------------------------|
    | 步驟 2 brief | `mockup-brief-writer`（定義檔 sonnet + high） | **v1 → `opus`**：畫面拆解與狀態模型是本版 mockup 的架構判斷；v ≥ 2 只套「本版異動」做增量，不覆寫 |
    | 步驟 2 假資料事實查證 | `general-purpose`、`sonnet` | — |
+   | 步驟 3 製作 | `mockup-builder`（定義檔 sonnet + high） | — |
    | 步驟 5 檢核 | `mockup-consistency-checker`（定義檔 sonnet + high） | **本版以交接 SDD 為目標 → `opus`**：交接後版本鎖定，偏離只能走 handback 迴圈，誤判代價最高 |
 
    effort 無法逐次覆寫，只能在定義檔設。subagent 保持單層（它們不再派 subagent）。
@@ -93,13 +96,14 @@ TOP="$(git rev-parse --show-toplevel)"; echo check_git=ok
 [ -f "$TOP/.make-mockup.json" ] || echo '{"root":"make-mockups"}' > "$TOP/.make-mockup.json"
 ROOT="$(bash $SKILL_DIR/scripts/mockup-root.sh)"; echo "root=$ROOT"; ls "$ROOT" 2>/dev/null
 git -C "$TOP" status --porcelain | grep -v -e "^.. ${ROOT#$TOP/}/" -e '^.. \.make-mockup\.json$' || true
-[ -f ~/.claude/agents/mockup-brief-writer.md ] && [ -f ~/.claude/agents/mockup-consistency-checker.md ] \
-   && echo check_agents=ok || echo check_agents=FAIL
+missing=""; for a in mockup-brief-writer mockup-builder mockup-consistency-checker; do
+  [ -f ~/.claude/agents/$a.md ] || missing="$missing $a"; done
+[ -z "$missing" ] && echo check_agents=ok || echo "check_agents=FAIL missing=$missing"
 ```
 
 - `check_git=FAIL` → 請使用者先 `git init`，不代做；此時不建立 `.make-mockup.json`。
 - `check_agents=FAIL` → 請使用者執行 `bash $SKILL_DIR/scripts/install.sh` 後再繼續（會寫入 `~/.claude/`，不代做）。
-  步驟 2、5 必須派 subagent，沒有定義檔就不能前進到那兩步。
+  步驟 2、3、5 必須派 subagent，沒有定義檔就不能前進到那幾步。
   檔案存在但 Agent 工具回「Agent type not found」＝剛安裝、本輪尚未載入：下一輪對話再派一次即可，不必重啟。
 - `.make-mockup.json` 不存在時自動以預設建立並隨第一個 commit 入版；使用者要改根目錄就改這個檔。
 - 最後一行列出 mockup 根目錄以外的未提交變更。非空時告知使用者：本流程只 commit 自己的產物，
@@ -150,11 +154,24 @@ prompt 必附：
 
 ## 步驟 3：製作 mockup
 
-讀 `references/artifact-mockup.md` §1、§2，照程序執行：
-載入 `artifact-design` skill → 依 brief 寫 `mockup-src/index.html`（每畫面標 `data-page`）→
-`Artifact publish` → 網址寫進狀態檔 `mockup.artifactUrl` → 給使用者連結，說明只有本人能開、分享需自行操作。
-之後依 SA 的回饋修改並以同一 file_path 重新發布，時間不限；規則類變更先回 storyboard（通用規則 1）。
-使用者說「凍結」「匯出」「定稿」才進步驟 4。狀態檔 `stage: mockup`。此階段不 commit。
+讀 `references/mockup-build.md` 與 `references/artifact-mockup.md` §1、§2，照程序執行。每次產出都是一個 build
+（`v<N>-b<kk>`），輸入與產出成對留在 `mockup-src/builds/<build id>/`，索引在 `mockup-src/builds.md`：
+
+1. **寫 request**：`mockup-src/builds/<build id>/request.md`，模式 v1 首個為 `new`、v≥2 首個為 `revise`
+   （base＝前一版凍結的 build）、之後皆為 `patch`。`builds.md` 加一列，狀態「已派遣」。
+2. **派 `mockup-builder`**：prompt 附 mockup 根目錄絕對路徑、`<slug>`、build id、`$SKILL_DIR` 絕對路徑。
+3. **審回報**（≤20 行，結論行 `Build 結論`），`builds.md` 回填結果與 sha256、狀態「已產出」：
+   - 「待確認」非空 → AskUserQuestion 問使用者；屬規則就依通用規則 1 先寫回 storyboard，再開新 patch build。
+   - 有變更項「退回」→ 補齊 request 的缺漏（通常是規則類沒寫回 storyboard），開新 build 重做該項。
+   - data-page 對照有缺漏 → 開新 patch build 補。
+4. **採用與發布**：`cp` 該 build 的 `index.html` 到 `mockup-src/index.html` → `Artifact publish`（同一 file_path）→
+   `builds.md` 填 artifact 版本 id、狀態「已發布」；首次發布把網址寫進狀態檔 `mockup.artifactUrl`，
+   給使用者連結並說明只有本人能開、分享需自行操作。
+   不採用的 build 標「未採用」，不發布。
+5. **迭代**：SA 的回饋（含改字、調間距）一律回到第 1 步開 patch build，多條回饋合併成一個 request 的多個 C 項；
+   要回退就以較舊的 build 為 base 或寫「回退」類 C 項。主對話不直接編輯 HTML。
+
+使用者說「凍結」「匯出」「定稿」才進步驟 4。狀態檔 `stage: mockup`、`mockup.currentBuild` 隨採用更新。此階段不 commit。
 
 使用者想先探索視覺方向時，可請他自行輸入 `/design <方向描述>`（slash command，你無法代為執行），
 把畫布連結寫進 brief「視覺參考」；畫布不凍結、不檢核（見 artifact-mockup.md §0）。
@@ -163,16 +180,17 @@ prompt 必附：
 
 讀 `references/artifact-mockup.md` §3，照程序執行：
 `Artifact read`（`path: "index.html"`）取回已發布版本 →
-`SOURCE_URL=<url> SOURCE_VERSION=<版本 id> bash $SKILL_DIR/scripts/ingest-export.sh <slug> <N> <取回檔>`
-歸檔到 `make-mockups/<slug>/mockups/v<N>/index.html` 並寫 `export.json`（來源網址、版本 id、sha256）→
+`SOURCE_URL=<url> SOURCE_VERSION=<版本 id> SOURCE_BUILD=<build id> bash $SKILL_DIR/scripts/ingest-export.sh <slug> <N> <取回檔>`
+歸檔到 `make-mockups/<slug>/mockups/v<N>/index.html` 並寫 `export.json`（來源網址、版本 id、build id、sha256）→
+`builds.md` 該 build 狀態改「已凍結」、狀態檔 `versions[N-1].build` 填入 →
 比對 sha256 → `ArtifactComments read` 取留言寫到 `feedback/v<N>-comments.md`（無留言則不產檔）。
-commit（含 `mockup-src/` 當下狀態）：`mockup(<slug>): freeze v<N>`。
+commit（含 `mockup-src/` 當下狀態與全部 build 紀錄）：`mockup(<slug>): freeze v<N>`。
 
 ## 步驟 5：一致性檢核
 
 派 `mockup-consistency-checker`（model 見通用規則 8：本版以交接 SDD 為目標就覆寫 `opus`；
 不確定時先 AskUserQuestion「v<N> 檢核通過後是否打算直接交接 SDD」再派）。
-主對話是 mockup 的製作者，**不自己核對**。prompt 必附：mockup 根目錄絕對路徑、`<slug>`、版本 N、
+主對話寫了 build request 並決定採用哪個 build，**不自己核對**。prompt 必附：mockup 根目錄絕對路徑、`<slug>`、版本 N、
 `$SKILL_DIR` 絕對路徑、報告輸出路徑 `make-mockups/<slug>/reviews/v<N>-consistency.md`。
 複核時另附前輪報告路徑與使用者裁決。
 
@@ -196,14 +214,14 @@ commit（含 `mockup-src/` 當下狀態）：`mockup(<slug>): freeze v<N>`。
 - Read storyboard skill 的 SKILL.md，以**升版模式**（`revise <slug> <回饋>`）
   inline 照做：逐條歸類（改規則／改範圍／新 Story／不採納／待決定）→ 確認 → 改內文 →
   變更紀錄追加 v<N+1> → 輸出「本版異動清單」。
-- 在 storyboard「相關文件」補列本版的 brief、mockup、檢核報告。
+- 在 storyboard「相關文件」補列本版的 brief、mockup（含凍結的 build id）、檢核報告。
 - 第一次讀 `references/revisions.template.md` 建立 `make-mockups/<slug>/revisions.md`，
   之後每版追加一列：版本、觸發來源、變更摘要、受影響 User Story、受影響畫面、
   brief、mockup、檢核報告。
 - 已納入的 artifact 留言串，若已送給 Claude，回覆「已納入 v<N+1>」並標為已解決。
 - 狀態檔 `currentVersion` 加一。commit：`storyboard(<slug>): v<N+1> <摘要>`。
 - 回步驟 2 產 v<N+1> brief，直到步驟 5 完成後才能交接 SDD（見步驟 5 收尾分流）。
-  v<N+1> 仍發布到同一 artifact，客戶的連結不變。
+  v<N+1> 仍發布到同一 artifact，客戶的連結不變；其首個 build 為 `revise` 模式，base＝v<N> 凍結的 build。
   使用者暫不繼續就停在此，告知流程可隨時以 `resume` 續跑。
 - 回饋來源是開發端的 `handback-to-sa.md`（D-ID／X-ID／G-ID）時，歸類規則見 `references/sdd-handoff.md`「開發回寫」。
 

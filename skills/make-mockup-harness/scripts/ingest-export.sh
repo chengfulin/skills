@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 用法：[SOURCE_URL=<artifact 網址>] [SOURCE_VERSION=<版本 id>] ingest-export.sh <slug> <N> [來源檔路徑]
+# 用法：[SOURCE_URL=<artifact 網址>] [SOURCE_VERSION=<版本 id>] [SOURCE_BUILD=<build id>] ingest-export.sh <slug> <N> [來源檔路徑]
 # 把凍結的 mockup HTML 歸檔到 make-mockups/<slug>/mockups/v<N>/index.html，並寫 export.json。
 # 目標已存在即拒絕（凍結規則）。
 # 來源檔：artifact 流程傳 `Artifact read`（path: index.html）回報的存檔路徑；
@@ -20,11 +20,13 @@ sha="$(shasum -a 256 "$dst_dir/index.html" | cut -d' ' -f1)"
 size="$(wc -c < "$dst_dir/index.html" | tr -d ' ')"
 if [[ -n "${SOURCE_VERSION:-}" ]]; then sv="\"$SOURCE_VERSION\""; else sv=null; fi
 if [[ -n "${SOURCE_URL:-}" ]]; then su="\"$SOURCE_URL\""; else su=null; fi
+if [[ -n "${SOURCE_BUILD:-}" ]]; then sb="\"$SOURCE_BUILD\""; else sb=null; fi
 cat > "$dst_dir/export.json" <<JSON
 {
   "sourceFile": "$(basename "$src")",
   "sourceUrl": $su,
   "sourceVersion": $sv,
+  "build": $sb,
   "importedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "bytes": $size,
   "sha256": "$sha"
