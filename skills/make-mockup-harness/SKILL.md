@@ -175,7 +175,7 @@ commit：`review(<slug>): v<N> consistency`。
 
 1. 前提第 5 項（StoryBoard 自身一致性、Prototype 反查業務規則）由你檢查，發現項目請使用者裁決。
 2. `bash $SKILL_DIR/scripts/pack-sdd-handoff.sh <slug> <N>` 做機械檢查與打包；任一 FAIL 停下回報。
-3. 截圖到 `handoff/v<N>/.specify/context/<slug>/v<N>/prototype/screens/`，填 `sdd-input.md` 全部章節，
+3. 截圖到 `handoff/v<N>/.specify/context/<slug>/v<N>/prototype/screens/`，核對 `index.md` 涵蓋欄、填 `sdd-input.md` 全部章節，
    Priority 與補問清單答案留給 PM。
 4. PM 答案填齊才收尾：狀態檔 `stage: handed-off`、`versions[N-1].handoff`，revisions.md 註記，
    commit：`handoff(<slug>): v<N> 交付 SDD 開發`。

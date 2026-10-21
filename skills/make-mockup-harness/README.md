@@ -34,7 +34,7 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 | `scripts/ingest-export.sh` | 把凍結的 mockup 歸檔到 `mockups/v<N>/` 並寫 export.json（來源網址、版本 id、sha256），拒絕覆蓋凍結版 |
 | `scripts/extract-screens.sh` | 從單檔 HTML 以關鍵字取證，避免整份讀入 context |
 | `scripts/serve-mockup.sh` | 以本機 http server 開啟凍結的 mockup，供操作驗證 |
-| `scripts/pack-sdd-handoff.sh` | 步驟 7：前提機械檢查，把 v<N> 打包成開發 repo 的 `.specify/context/` 結構並代入範本 |
+| `scripts/pack-sdd-handoff.sh` | 步驟 7：前提機械檢查，把 v<N> 打包成開發 repo 的 `.specify/context/` 結構、代入範本、產生規格來源索引 `index.md` |
 
 依賴同目錄的 `make-storyboard` skill（步驟 1 與 6 以 Read 方式 inline 執行）。
 
@@ -95,7 +95,7 @@ handoff/v<N>/
 ├── SDD-START.md                           # 開發者照貼的啟動 prompt 與步驟
 └── .specify/context/
     ├── _shared/{spec-source-template.md, sdd-source-instructions.md}
-    └── <slug>/v<N>/{storyboard.md, sdd-input.md, prototype/, reference/}
+    └── <slug>/v<N>/{index.md, storyboard.md, sdd-input.md, prototype/, reference/}
 ```
 
 開發者把 `.specify/context/` 複製進開發 repo、commit，依 `SDD-START.md` 啟動 sdd-harness 即可，不需要本 skill。

@@ -8,7 +8,7 @@
 - 三個維度分開決定，對應憲章的設計：**專案類型**描述成熟度、**服務風險分級**描述出錯的後果、**導入階段**是團隊層級的紀律成熟度。
 - 提問選項與判定規則都從 `references/baseline/` 的表格即時讀出，不在 skill 內寫死；基線升版只要重跑同步腳本。
 - 產出「SDD 導入決策摘要」：欄位對應 `sdd-harness` 的 `sdd-adoption.json`，並附可直接貼進專案 README 的「SDD 導入宣告」區塊。
-- `references/baseline/manifest.json` 與 `sdd-harness` 的 `fetch-baseline.sh` 同 schema，離線時可作為目標專案 `.specify/memory/baseline/` 的替代快照（須使用者同意）。
+- `references/baseline/` 就是 `sdd-harness` 步驟 2 預設複製到目標專案 `.specify/memory/baseline/` 的來源（含 `manifest.json`）。
 
 ## 檔案
 
@@ -31,10 +31,6 @@
 
 ## 與 sdd-harness 搭配
 
-`sdd-harness` 步驟 2 以 `fetch-baseline.sh` 抓 `SDD_BASELINE_REPO` 指定的基線。要用本基線：
-
-```bash
-export SDD_BASELINE_REPO=chengfulin/sdd-baseline
-```
-
-先跑 `/sdd-baseline decide` 定案，再把摘要交給 harness 步驟 2 的提問。
+`sdd-harness` 步驟 2 預設直接複製本 skill 的 `references/baseline/`，不需額外設定
+（要改用其他位置的副本時設 `SDD_BASELINE_DIR=<目錄>`）。
+建議先跑 `/sdd-baseline decide` 定案，再把摘要貼進 `/sdd-harness` 的啟動 prompt，步驟 2 會直接採用。

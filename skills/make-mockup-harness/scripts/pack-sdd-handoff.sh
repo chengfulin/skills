@@ -2,8 +2,8 @@
 # 用法：pack-sdd-handoff.sh <slug> <N>
 # 把 make-mockups/<slug>/ 的 v<N> 產出打包成 sdd-harness 開發 repo 可直接複製的 `.specify/context/` 結構，
 # 放在 make-mockups/<slug>/handoff/v<N>/，並附開發者用的 SDD-START.md。
-# 只做機械性工作：前提檢查、複製、sha256、代入範本。截圖與 sdd-input.md 的內容由 orchestrator 依
-# references/sdd-handoff.md 步驟 7 補齊。目標目錄已存在即拒絕（凍結規則）。
+# 只做機械性工作：前提檢查、複製、sha256、代入範本、產生規格來源索引 index.md。截圖、index.md 的
+# 待填欄與 sdd-input.md 的內容由 orchestrator 依 references/sdd-handoff.md 步驟 7 補齊。目標目錄已存在即拒絕（凍結規則）。
 set -euo pipefail
 slug="${1:?slug}"; n="${2:?version}"
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -83,6 +83,44 @@ fill "$tpl/sdd-source-instructions.template.md" "$ctx/_shared/sdd-source-instruc
 fill "$tpl/sdd-input.template.md"               "$feat/sdd-input.md"
 fill "$tpl/sdd-start.template.md"               "$out/SDD-START.md"
 
+# ---- index.md：規格來源索引 ----------------------------------------------------
+# clarifier／analyze 找來源的入口：每檔一列寫媒材、大小、權威、取證方式、涵蓋範圍。
+# 涵蓋欄能從來源機械抓到的就抓（storyboard 的 US-nn 標題、mockup 的 data-page），抓不到留 {填：…}。
+size_of() { wc -c < "$1" | awk '{b=$1; if (b<1024) printf "%d B", b; else if (b<1048576) printf "%.0f KB", b/1024; else printf "%.1f MB", b/1048576}'; }
+# grep 沒命中回 1，在 pipefail 下會讓整個賦值失敗、script 中止，所以各加 || true 讓 fallback 生效。
+sb_us="$( { grep -E '^#+ *US-[0-9]+' "$feat/storyboard.md" || true; } | grep -v '已移除' | grep -o -E 'US-[0-9]+' | sort -u | paste -sd '、' - || true)"
+proto_pages="$( { grep -o -E 'data-page="S[0-9]+[^"]*"' "$feat/prototype/index.html" || true; } | sed -E 's/^data-page="([^"]*)"$/\1/' \
+  | sort -u | sort -t S -k2,2n | paste -sd '、' - || true)"
+fill_us='{填：US-nn 清單}'; fill_pages='{填：S<n> 畫面清單（舊 Claude Design 單檔無 data-page，依 brief 畫面清單填）}'
+fill_ref='{填：涵蓋的章節或 US}'
+{
+  echo "# 規格來源索引：$title v$n"
+  echo
+  echo "> 由 \`pack-sdd-handoff.sh\` 產生，入版控後與來源檔一起唯讀；新版另開目錄。"
+  echo "> 用途：clarifier／analyze **找來源的入口**——先依本表決定開哪個檔、怎麼取證、看哪一段，再依 spec 的錨點取片段，不掃目錄。"
+  echo "> 「涵蓋」欄列到錨點的粒度（US-nn、S<n>、§節、p.頁），spec 錨點要能在這欄找到。自動抓到的要與 storyboard、brief 核對；標「填」的欄由 SA 在交接步驟 3 補齊。"
+  echo
+  echo "| 路徑 | 媒材 | 大小 | 權威 | 取證方式 | 涵蓋（US／畫面／章節） |"
+  echo "|---|---|---|---|---|---|"
+  echo "| \`storyboard.md\` | markdown | $(size_of "$feat/storyboard.md") | 業務規則 | Read；US 以 \`### US-nn\` 標題定位，只讀錨點指到的 US 與全域規則 | ${sb_us:-$fill_us} |"
+  echo "| \`prototype/index.html\` | html（單檔 mockup） | $proto_size | 呈現 | **不整份 Read**：看 \`prototype/screens/\`、限量 grep（\`grep -o -m 5\`）、或本機 http server 開啟操作 | ${proto_pages:-$fill_pages} |"
+  echo "| \`prototype/export.json\` | json | $(size_of "$feat/prototype/export.json") | — | Read（sha256、來源 artifact） | — |"
+  echo "| \`prototype/screens/*.png\` | 截圖（1440×900 full-page） | — | 衍生產物，無獨立權威 | Read 看圖；逐張對應畫面、狀態、US 見 \`sdd-input.md\`「截圖索引」 | 依截圖索引 |"
+  echo "| \`sdd-input.md\` | markdown | — | 交接說明 | Read 全文 | US 對照、AC 原文、FR 候選、已定案決策、PM 答案 |"
+  for f in "$feat"/reference/*; do
+    [[ -f "$f" ]] || continue
+    rel="reference/$(basename "$f")"
+    case "$(basename "$f")" in
+      *design-brief*) cov="畫面 ID 與畫面清單、假資料表、展示腳本" ;;
+      *consistency*)  cov="操作驗證表、裁決" ;;
+      *)              cov="$fill_ref" ;;
+    esac
+    echo "| \`$rel\` | markdown | $(size_of "$f") | 參考，不具權威 | Read；只讀錨點或 FR 關鍵詞指到的節 | $cov |"
+  done
+  echo
+  echo "sha256：\`storyboard.md\` ${sha_sb}；\`prototype/index.html\` ${sha_proto}（= export.json）。"
+} > "$feat/index.md"
+
 # ---- 報告 ------------------------------------------------------------------
 echo
 echo "packed -> $out"
@@ -92,8 +130,12 @@ echo "sha256:"
 echo "  storyboard.md        $sha_sb"
 echo "  prototype/index.html $sha_proto  (= export.json)"
 echo
+echo "index.md 涵蓋欄："
+echo "  storyboard US：${sb_us:-（未抓到，待填）}"
+echo "  prototype 畫面：${proto_pages:-（未抓到 data-page，待填）}"
+echo
 echo "尚待 orchestrator 完成（見 references/sdd-handoff.md 步驟 7）："
 echo "  1. prototype/screens/ 截圖（1440×900、full-page、含互動後狀態）並填 sdd-input.md 截圖索引"
-echo "  2. sdd-input.md 其餘章節：US 對照、驗收條件原文、FR 候選、已定案決策、範圍外、補問清單"
+echo "  2. 核對 index.md 自動抓到的涵蓋欄、補 {填：…}；sdd-input.md 其餘章節：US 對照、驗收條件原文、FR 候選、已定案決策、範圍外、補問清單"
 echo "  3. PM 填 Priority 與補問清單答案"
 echo "  4. 狀態檔 stage: handed-off、versions[].handoff，commit"

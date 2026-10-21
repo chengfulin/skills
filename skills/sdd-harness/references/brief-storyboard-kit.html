@@ -1,0 +1,128 @@
+<!--
+  brief-storyboard-kit.html — sdd-brief-writer 的故事板套件（唯讀範本；規則出處：agents/sdd-brief-writer.md#風格與技術契約）
+
+  用法：<style> 整塊與 <svg> 的 <defs> 整塊照抄到 feature-brief.html 檔首（<title> 之後）；
+  每一格複製「格子骨架」後只改文字、換圖示、調座標。不另寫套件以外的 CSS 顏色與長 SVG path。
+
+  排版規則（sonnet 實測 2026-09-30，違反即重疊或溢出）：
+  1. 每格 SVG 的 viewBox 寬固定 860，高 250～350；座標以 10 為單位對齊。
+  2. 方框寬 ≥148、高 ≥100；框內主標 16px 粗體、副標 14px；副標每行 ≤8 個全形字，字多就加行（行距 22），不加寬、不縮字。
+  3. 卡片（rx 12～14）內文字 ≤ 卡片寬減 30；同列卡片間距 ≥20；箭頭只接框邊，不穿過文字。
+  4. 場景三等分：左（x 40～200）放人或物、中（x 250～560）放動作或工具、右（x 570～830）放結果；標籤放圖示正下方。
+  5. 文字大小：格內主角標籤 20～22 粗體、說明 15～17、次要 13～14；顏色只用 token（var(--…)），白字只放在 --blue／--coral 實心底上。
+  6. 圖示只用下方 symbol；缺的圖示以 ≤6 行的簡單形狀自畫（rect／circle／path 直線），不用複雜 path。
+  7. 流程格：主線 ≤6 步、錯誤支線 ≤2 條；超過改用 mermaid。
+-->
+<style>
+/* 版面：單欄 900px；上半「看懂它」一格一件事（編號＋大標＋SVG 場景＋一句重點），下半表格 */
+:root{
+  --bg:#FFFBF2; --card:#FFFFFF; --ink:#1F2937; --sub:#5B6470; --line:#E6E0D2; --th:#F4EFE3;
+  --blue:#2B59C3; --blue-soft:#DCE6FA;
+  --yellow:#F5C242; --yellow-soft:#FDF1CF; --yellow-ink:#8A5A12;
+  --coral:#E4573D; --coral-soft:#FBDDD6;
+  --green:#3A9D6B; --green-soft:#D8F0E3;
+  --grey:#AEB6C0;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#171A20; --card:#21252E; --ink:#F1F3F6; --sub:#AEB6C2; --line:#343A45; --th:#2A303B;
+    --blue:#7FA3F0; --blue-soft:#243452; --yellow:#F7CF6B; --yellow-soft:#4A3C16; --yellow-ink:#F7CF6B;
+    --coral:#F08A74; --coral-soft:#4A2620; --green:#6FCB98; --green-soft:#1F3D2D; --grey:#6C7683; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#171A20; --card:#21252E; --ink:#F1F3F6; --sub:#AEB6C2; --line:#343A45; --th:#2A303B;
+  --blue:#7FA3F0; --blue-soft:#243452; --yellow:#F7CF6B; --yellow-soft:#4A3C16; --yellow-ink:#F7CF6B;
+  --coral:#F08A74; --coral-soft:#4A2620; --green:#6FCB98; --green-soft:#1F3D2D; --grey:#6C7683; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6}
+main{max-width:900px;margin:0 auto;padding-block:32px 72px;padding-inline:20px}
+h1{font-size:clamp(1.6rem,5vw,2.4rem);font-weight:900;line-height:1.2;margin:0 0 6px;text-wrap:balance}
+h2{font-size:1.35rem;font-weight:900;margin:40px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--blue)}
+h3{font-size:1.05rem;font-weight:700;margin:22px 0 6px}
+.meta{color:var(--sub);font-size:.9rem}
+.note{background:var(--yellow-soft);border-left:4px solid var(--yellow);padding:8px 12px;margin:10px 0;font-size:.9rem}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 22px 18px;margin:16px 0;display:grid;gap:12px}
+.panel h3{font-size:clamp(1.3rem,4vw,1.8rem);font-weight:900;line-height:1.2;margin:0;text-wrap:balance}
+.num{display:inline-block;font-weight:900;font-size:.75rem;letter-spacing:.15em;color:var(--blue);background:var(--blue-soft);padding:2px 10px;border-radius:999px;width:max-content}
+.pic{overflow-x:auto}
+.pic svg{display:block;width:100%;min-width:640px;height:auto}
+.cap{font-size:1.05rem;font-weight:500;max-width:52ch;margin:0}
+.cap b{font-weight:900}
+.cap small{display:block;color:var(--sub);font-size:.82rem;font-weight:400;margin-top:2px}
+text{font-family:var(--sans)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin:8px 0;overflow-x:auto}
+ul{margin:6px 0;padding-left:20px}
+li small{color:var(--sub)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:.88rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--th)}
+.ok{color:var(--green);font-weight:700}.no{color:var(--coral);font-weight:700}
+code{font-size:.9em;background:var(--th);padding:1px 4px;border-radius:3px}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="person" viewBox="0 0 100 110"><circle cx="50" cy="28" r="20" fill="currentColor"/><path d="M12 108 a38 38 0 0 1 76 0 z" fill="currentColor"/></symbol>
+    <symbol id="doc" viewBox="0 0 100 120"><path d="M14 6 h50 l22 22 v86 h-72 z" fill="currentColor"/><path d="M64 6 v22 h22" fill="none" stroke="#FFFFFF" stroke-width="4"/><g stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"><path d="M28 50 h44 M28 68 h44 M28 86 h30"/></g></symbol>
+    <symbol id="sheet" viewBox="0 0 120 100"><rect x="4" y="4" width="112" height="92" rx="6" fill="currentColor"/><g stroke="#FFFFFF" stroke-width="3"><path d="M4 28 h112 M4 50 h112 M4 72 h112 M40 4 v92 M78 4 v92"/></g></symbol>
+    <symbol id="term" viewBox="0 0 120 100"><rect x="4" y="4" width="112" height="92" rx="8" fill="currentColor"/><rect x="4" y="4" width="112" height="18" rx="8" fill="#FFFFFF" opacity=".35"/><path d="M22 44 l16 12 l-16 12" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M48 68 h30" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/></symbol>
+    <symbol id="bot" viewBox="0 0 100 110"><rect x="44" y="4" width="12" height="14" rx="3" fill="currentColor"/><circle cx="50" cy="4" r="5" fill="currentColor"/><rect x="10" y="18" width="80" height="62" rx="16" fill="currentColor"/><rect x="22" y="32" width="56" height="30" rx="10" fill="#FFFFFF"/><circle cx="38" cy="47" r="6" fill="#1F2937"/><circle cx="62" cy="47" r="6" fill="#1F2937"/><rect x="26" y="84" width="48" height="22" rx="8" fill="currentColor"/></symbol>
+    <symbol id="server" viewBox="0 0 100 110"><rect x="10" y="6" width="80" height="28" rx="6" fill="currentColor"/><rect x="10" y="41" width="80" height="28" rx="6" fill="currentColor"/><rect x="10" y="76" width="80" height="28" rx="6" fill="currentColor"/><g fill="#FFFFFF"><circle cx="24" cy="20" r="4"/><circle cx="24" cy="55" r="4"/><circle cx="24" cy="90" r="4"/></g></symbol>
+    <symbol id="warn" viewBox="0 0 100 100"><path d="M50 8 L96 90 H4 Z" fill="currentColor"/><path d="M50 36 v26" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round"/><circle cx="50" cy="76" r="5" fill="#FFFFFF"/></symbol>
+    <symbol id="check" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="currentColor"/><path d="M28 52 l15 15 l30 -34" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--grey)"/></marker>
+  </defs>
+</svg>
+
+<!-- ===== 格子骨架 A：概念圖一格（背景／要解決的問題／目的／預期結果 各一格，共四格） ===== -->
+<section class="panel">
+  <span class="num">01 · 背景</span>
+  <h3>一句話大標：誰、在什麼情境（≤18 字）</h3>
+  <div class="pic"><svg viewBox="0 0 860 260" role="img" aria-label="用一句話說這張圖畫了什麼">
+    <!-- 左：主角 -->
+    <use href="#person" x="50" y="50" width="110" height="121" color="var(--blue)"/>
+    <text x="105" y="210" text-anchor="middle" font-size="20" font-weight="900" fill="var(--ink)">主角稱呼</text>
+    <path d="M180 110 h60" stroke="var(--grey)" stroke-width="6" marker-end="url(#arr)"/>
+    <text x="210" y="95" text-anchor="middle" font-size="15" fill="var(--sub)">動詞</text>
+    <!-- 中：物件卡片，放 spec 的具體樣本（驗收情境的輸入／輸出），不放抽象方塊 -->
+    <rect x="260" y="30" width="320" height="170" rx="12" fill="var(--card)" stroke="var(--ink)" stroke-width="3"/>
+    <text x="280" y="62" font-size="18" font-weight="900" fill="var(--coral)">樣本第一行</text>
+    <g font-size="17" fill="var(--ink)"><text x="280" y="102">樣本第二行</text><text x="280" y="134">樣本第三行</text></g>
+    <text x="420" y="232" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">物件名稱：一句說明（≤15 字）</text>
+    <!-- 右：情境或結果 -->
+    <use href="#term" x="650" y="55" width="150" height="125" color="var(--ink)"/>
+    <text x="725" y="215" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">情境標籤</text>
+  </svg></div>
+  <p class="cap">一句重點，<b>關鍵詞粗體</b>。<small>來源：spec 小節名</small></p>
+</section>
+
+<!-- ===== 格子骨架 B：流程圖一格（主線 ≤6 步一條線，錯誤支線 ≤2 條往下走） ===== -->
+<section class="panel">
+  <span class="num">流程</span>
+  <h3>主流程一條線，出錯往下走</h3>
+  <div class="pic"><svg viewBox="0 0 860 350" role="img" aria-label="幾步主流程與幾條錯誤支線">
+    <g font-size="16" font-weight="700" fill="var(--ink)" text-anchor="middle">
+      <rect x="20" y="50" width="148" height="100" rx="10" fill="var(--card)" stroke="var(--ink)" stroke-width="2.5"/><text x="94" y="84">步驟一</text><text x="94" y="110" font-size="14" font-weight="400" fill="var(--sub)">副標 ≤8 字</text>
+      <rect x="190" y="50" width="148" height="100" rx="10" fill="var(--card)" stroke="var(--ink)" stroke-width="2.5"/><text x="264" y="84">步驟二</text><text x="264" y="110" font-size="14" font-weight="400" fill="var(--sub)">副標第一行</text><text x="264" y="132" font-size="14" font-weight="400" fill="var(--sub)">副標第二行</text>
+      <rect x="360" y="50" width="148" height="100" rx="10" fill="var(--card)" stroke="var(--ink)" stroke-width="2.5"/><text x="434" y="84">步驟三</text>
+      <rect x="530" y="50" width="148" height="100" rx="10" fill="var(--card)" stroke="var(--ink)" stroke-width="2.5"/><text x="604" y="84">步驟四</text>
+      <rect x="700" y="50" width="148" height="100" rx="10" fill="var(--green-soft)" stroke="var(--green)" stroke-width="2.5"/><text x="774" y="84" fill="var(--green)">成功結果</text><text x="774" y="110" font-size="14" font-weight="400" fill="var(--sub)">回報成功（0）</text>
+    </g>
+    <g stroke="var(--grey)" stroke-width="5" marker-end="url(#arr)"><path d="M168 100 h14"/><path d="M338 100 h14"/><path d="M508 100 h14"/><path d="M678 100 h14"/></g>
+    <!-- 錯誤支線：虛線從方框底部垂直落到卡片；卡片左右錯開、間距 ≥20 -->
+    <g stroke="var(--coral)" stroke-width="4" stroke-dasharray="7 5" marker-end="url(#arr)"><path d="M264 150 v50"/><path d="M434 150 v50"/></g>
+    <rect x="154" y="210" width="200" height="90" rx="10" fill="var(--coral-soft)"/>
+    <text x="254" y="240" text-anchor="middle" font-size="16" font-weight="900" fill="var(--coral)">錯誤一</text>
+    <text x="254" y="264" text-anchor="middle" font-size="14" fill="var(--ink)">怎麼回應（≤12 字）</text>
+    <text x="254" y="286" text-anchor="middle" font-size="13" fill="var(--sub)">哪些情況（≤13 字）</text>
+    <rect x="374" y="210" width="260" height="90" rx="10" fill="var(--coral-soft)"/>
+    <text x="504" y="240" text-anchor="middle" font-size="16" font-weight="900" fill="var(--coral)">錯誤二</text>
+    <text x="504" y="264" text-anchor="middle" font-size="14" fill="var(--ink)">怎麼回應（≤13 字）</text>
+    <text x="504" y="286" text-anchor="middle" font-size="13" fill="var(--sub)">哪些情況（≤18 字）</text>
+    <text x="430" y="336" text-anchor="middle" font-size="14" fill="var(--sub)">整張圖的一句補充（可省略）</text>
+  </svg></div>
+  <p class="cap">一句重點，<b>關鍵詞粗體</b>。<small>來源：spec 小節名</small></p>
+</section>

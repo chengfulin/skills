@@ -11,6 +11,7 @@
 │   ├── spec-source-template.md        # spec.md「規格來源」段範本（機械檢查 7 的比對原文）
 │   └── sdd-source-instructions.md     # sdd-harness 各階段補充指示；每個 prompt 都要先讀它
 └── {slug}/v{N}/                       # 規格來源，唯讀
+    ├── index.md                       # 規格來源索引：每檔的媒材、取證方式、涵蓋的 US／畫面——找來源從這裡開始
     ├── storyboard.md                  # 業務規則的權威
     ├── sdd-input.md                   # US 對照、驗收條件原文、FR 候選、已定案決策、補問清單（PM 已答）
     ├── prototype/index.html           # 呈現的權威；約 {proto_size}，不要整份 Read
@@ -111,7 +112,7 @@ SA／PM 已回覆 specs/{NNN}/clarify-questions-for-sa.md（答案在「答覆�
 
 ## 注意
 
-- `prototype/index.html` 不整份 Read；看截圖、限量 grep、或開本機 server 操作。
+- 找來源先讀 `index.md`，再依 spec 的錨點取片段；`prototype/index.html` 不整份 Read——看截圖、限量 grep、或開本機 server 操作。
 - 業務類問題不自己代答；權威劃分第 1 條：會改變資料、狀態、計算結果的是業務規則，裁決權在 SA／PM。
 - 與 StoryBoard 明文不同的處置，除 D-ID 外要同時登記 X-ID，否則機械檢查 7 不過。
 - 版面比對以結構為準，像素差不判 FAIL。

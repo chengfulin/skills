@@ -82,6 +82,7 @@
 ### §7 交接 SDD
 - `handoff/v<N>/SDD-START.md` 與 `handoff/v<N>/.specify/context/` 存在，`pack-sdd-handoff.sh` 的 `check_*` 全數 ok。
 - `prototype/screens/` 至少每個畫面一張，`sdd-input.md` 截圖索引與檔案一一對應。
+- `index.md` 表格列無殘留待填欄，「涵蓋」欄的 US 與畫面清單與 storyboard、brief 一致。
 - `sdd-input.md` 無殘留 `{…}` 待填欄位與 `<!-- -->` 指引；US 對照 Priority 與補問清單答案已由 PM 填齊。
 - 狀態檔 `stage: handed-off`，`versions[N-1].handoff.date`、`sha256` 填入；`revisions.md` v<N> 列註記已交付。
 
