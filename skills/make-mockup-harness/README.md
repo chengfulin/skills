@@ -22,9 +22,11 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 |------|------|
 | `SKILL.md` | orchestrator 主規則：6 階段＋選配的交接 SDD、通用規則（含派工與模型對照表）、每步驟指示 |
 | `agents/mockup-brief-writer.md` | 步驟 2 的 subagent：讀 storyboard 推導畫面、狀態、假資料寫成 brief（sonnet + high；v1 覆寫 opus） |
+| `agents/mockup-builder.md` | 步驟 3 的 subagent：依 build request 產出 mockup HTML 快照與產出紀錄，不發布、不問使用者（sonnet + high）；微修由主對話以 inline build 直接改 |
 | `agents/mockup-consistency-checker.md` | 步驟 5 的 subagent：獨立 context 檢核凍結 mockup 與 storyboard 的一致性，含 Chrome 操作驗證（sonnet + high；交接版覆寫 opus） |
 | `references/workflow-stages.md` | 各階段完成準則、狀態檔 schema、續跑規則 |
 | `references/design-brief.template.md` | mockup 製作指示（brief）模板 |
+| `references/mockup-build.md` | build 的輸入（request.md）、產出紀錄（build.md）、索引（builds.md）格式與 build id 規則 |
 | `references/artifact-mockup.md` | 製作、發布、迭代、凍結、取留言、操作驗證程序與實測踩過的坑 |
 | `references/legacy-claude-design-handoff.md` | （舊）Claude Design 網站的 Chrome 交接程序，只供 2026-12-14 前舊專案收尾 |
 | `references/consistency-check.md` | 一致性檢核程序、操作驗證、五類報告格式 |
@@ -34,8 +36,9 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 | `scripts/install.sh` | 冪等安裝：symlink skill、agents 到 `~/.claude/`，順帶連上同 repo 的 `make-storyboard` |
 | `scripts/mockup-root.sh` | 解析產物根目錄（讀 `.make-mockup.json`，預設 `make-mockups/`） |
 | `scripts/detect-stage.sh` | 續跑偵測：讀狀態檔印出階段與下一步 |
-| `scripts/ingest-export.sh` | 把凍結的 mockup 歸檔到 `mockups/v<N>/` 並寫 export.json（來源網址、版本 id、sha256），拒絕覆蓋凍結版 |
+| `scripts/ingest-export.sh` | 把凍結的 mockup 歸檔到 `mockups/v<N>/` 並寫 export.json（來源網址、版本 id、build id、sha256），拒絕覆蓋凍結版 |
 | `scripts/extract-screens.sh` | 從單檔 HTML 以關鍵字取證，避免整份讀入 context |
+| `scripts/check-js.sh` | 以 `node --check` 檢查 mockup 內 inline script 的語法，錯誤行號對應 HTML 行號；builder 自查與 inline 微修用 |
 | `scripts/serve-mockup.sh` | 以本機 http server 開啟凍結的 mockup，供操作驗證 |
 | `scripts/pack-sdd-handoff.sh` | 步驟 7：前提機械檢查，把 v<N> 打包成開發 repo 的 `.specify/context/` 結構、代入範本、產生規格來源索引 `index.md` |
 
@@ -85,10 +88,12 @@ make-mockups/<slug>/
 ├── storyboard.md              # 唯一權威，含版本化變更紀錄
 ├── briefs/v<N>-design-brief.md
 ├── briefs/v<N>-research.md    # 假資料涉及真實事實時的查證結果與來源（沒有就不產）
-├── mockup-src/index.html      # 製作中的工作檔（發布到同一 artifact，隨凍結 commit 入版）
-├── mockups/v<N>/index.html    # 凍結版 + export.json（來源網址、版本 id、sha256）
+├── mockup-src/index.html      # 發布用工作檔＝目前採用的 build 快照（發布到同一 artifact，隨凍結 commit 入版）
+├── mockup-src/builds.md       # build 索引：模式、base、摘要、sha256、artifact 版本 id、狀態
+├── mockup-src/builds/v<N>-b<kk>/  # 每次產出一組：request.md（輸入）、index.html（快照）、build.md（產出紀錄）
+├── mockups/v<N>/index.html    # 凍結版 + export.json（來源網址、版本 id、build id、sha256）
 ├── reviews/v<N>-consistency.md
-├── feedback/                  # artifact 留言、製作時的待確認清單、客戶回饋
+├── feedback/                  # artifact 留言、客戶回饋
 ├── revisions.md               # 版本對照表
 ├── handoff/v<N>/              # 步驟 7 產出：SDD-START.md ＋ .specify/context/（整包交給開發者）
 └── .mockup-workflow.json      # 狀態檔，供續跑

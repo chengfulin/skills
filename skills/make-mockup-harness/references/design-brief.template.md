@@ -1,11 +1,11 @@
 # {feature} Design Brief v{N}
 
-> mockup 的製作指示。來源：`storyboard.md` v{N}。步驟 3 依本檔撰寫 `mockup-src/index.html`。
+> mockup 的製作指示。來源：`storyboard.md` v{N}。步驟 3 的 `mockup-builder` 依本檔產出 mockup HTML。
 > 正文只放畫面與規則；假資料多時放文末附表。
 
 ## 本版異動（v2 起必填，v1 刪除本段）
 - 相對 v{N-1}：{條列只描述差異，每條標明受影響畫面}
-- 以增量方式修改 `mockup-src/index.html`，不要重做未提及的畫面。
+- 以增量方式修改前一版凍結的 build，不要重做未提及的畫面。
 
 ## 目標與情境
 {功能一句話定位，誰在什麼情境下用。取自 storyboard Introduction}
@@ -48,7 +48,7 @@
 {取自 storyboard 各 User Story 的「範圍：不涵蓋」，條列}
 
 ## 製作要求
-- 所有畫面放在同一個 HTML 檔（`mockup-src/index.html`），每個畫面的根元素加 `data-page="S{n} {畫面名稱}"`。
+- 所有畫面放在同一個 HTML 檔，每個畫面的根元素加 `data-page="S{n} {畫面名稱}"`。
 - 狀態要能實際操作，以本檔假資料驅動；多角色時頁首放展示列（容器加 `data-demo`），不另做頁面切換器。
 - 不載入外部圖片；圖示用 inline SVG 或 data URI；字型可用 Google Fonts，需有系統字型 fallback。
 - 不要自行新增 brief 未提及的功能；想到的建議列成「待確認」，不要直接做進畫面。

@@ -26,8 +26,9 @@ effort: high
 
 資料來源（皆唯讀）：`storyboard.md`、`briefs/v<N>-design-brief.md`、`mockups/v<N>/index.html`、
 `mockups/v<N>/export.json`（讀它**記錄的** `sha256` 值，前 8 碼寫進報告標頭，並與
-`shasum -a 256 index.html` 核對；不是 export.json 本身的雜湊）、`feedback/v<N>-comments.md` 與
-`feedback/v<N>-build-notes.md`（若有）。
+`shasum -a 256 index.html` 核對；不是 export.json 本身的雜湊；`build` 欄是凍結的 build id，一併寫進標頭）、
+`feedback/v<N>-comments.md`（若有）、`mockup-src/builds/v<N>-b*/build.md`（範圍與讀法見 consistency-check.md「輸入」；
+舊專案改讀 `feedback/v<N>-build-notes.md`）。
 
 ## 程序
 

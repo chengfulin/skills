@@ -11,7 +11,7 @@ nxt = {"init":1,"storyboard":2,"brief":3,"mockup":"3|4","handoff":4,"export":5,"
 stage = s.get("stage","init")
 print(f"feature={s.get('feature')} version={s.get('currentVersion')} stage={stage} next_step={nxt.get(stage,'?')}")
 m = s.get("mockup") or {}
-print(f"mockup.artifactUrl={m.get('artifactUrl')}")
+print(f"mockup.artifactUrl={m.get('artifactUrl')} mockup.currentBuild={m.get('currentBuild')}")
 cd = s.get("claudeDesign") or {}
 if cd.get("projectUrl"):
     print(f"legacy=claude-design projectUrl={cd.get('projectUrl')}")

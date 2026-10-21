@@ -10,7 +10,8 @@
   "stage": "init | storyboard | brief | mockup | export | review | iterate | handed-off",
   "mockup": {
     "artifactUrl": "https://claude.ai/artifact/<id>",
-    "source": "mockup-src/index.html"
+    "source": "mockup-src/index.html",
+    "currentBuild": "v1-b03"
   },
   "claudeDesign": null,
   "designSystem": { "source": null, "name": null },
@@ -23,6 +24,7 @@
       "mockup": "mockups/v1/index.html",
       "sourceFile": "https://claude.ai/artifact/<id>",
       "sourceVersion": "1792403746-95f1",
+      "build": "v1-b03",
       "sha256": null,
       "review": "reviews/v1-consistency.md",
       "feedback": "feedback/v1-comments.md",
@@ -35,6 +37,8 @@
 
 `stage` 代表**已完成**的最後一個階段；續跑從下一階段開始。
 `mockup.artifactUrl` 跨版本不變（每版重新發布到同一 artifact）；`sourceVersion` 是凍結當下的 artifact 版本 id。
+`mockup.currentBuild` 是目前採用並發布的 build id；`versions[].build` 是該版凍結的 build id（格式見 `mockup-build.md`）。
+舊狀態檔沒有這兩個鍵時視為 `null`。
 `designSystem.source` 是 repo 內 tokens 檔路徑或設計系統 artifact 網址。
 `claudeDesign` 只存在於舊專案（見「舊專案」），新狀態檔填 `null`；舊專案的 `briefSentAt` 鍵保留不改名。
 `versions[]` 每版一筆，欄位缺值為 `null`，不要省略鍵。
@@ -61,12 +65,15 @@
 
 ### §3 製作 mockup
 - `mockup-src/index.html` 存在，brief 畫面清單的每個畫面都有對應的 `data-page`。
+- `mockup-src/builds.md` 存在；每個 build 目錄都有 `request.md`，狀態非「已派遣」者都有 `index.html` 與 `build.md`。
+- `mockup-src/index.html` 的 sha256 與 `mockup.currentBuild` 的快照相同（沒有繞過 build 直接改工作檔）。
 - 狀態檔 `mockup.artifactUrl` 非空，`versions[N-1].publishedAt` 填入。
 - 狀態檔 `stage: mockup`。本階段不 commit（迭代中，工作檔隨步驟 4 一起入版）。
 
 ### §4 凍結
 - `mockups/v<N>/index.html` 與 `export.json` 存在，`export.json` 的 sha256 與檔案、與 `Artifact read` 回報的值三者相符。
-- 狀態檔 `versions[N-1]` 的 `sourceFile`、`sourceVersion`、`sha256`、`mockup` 填入。
+- 狀態檔 `versions[N-1]` 的 `sourceFile`、`sourceVersion`、`build`、`sha256`、`mockup` 填入；
+  `export.json` 的 `build` 與之相同，`builds.md` 該列狀態為「已凍結」。
 - 有留言則 `feedback/v<N>-comments.md` 存在。
 - 狀態檔 `stage: export`。
 
@@ -97,7 +104,7 @@
 | init | 步驟 1 |
 | storyboard | 步驟 2 |
 | brief | 步驟 3 |
-| mockup | 步驟 3 迭代中：先問使用者是否已可凍結，是就步驟 4，否則繼續迭代（跨 session 先 `Artifact read` 網址） |
+| mockup | 步驟 3 迭代中：先看 `builds.md` 有無「已派遣」未完成的 build（有就重派或標「未採用」），再問使用者是否已可凍結，是就步驟 4，否則繼續迭代（跨 session 先 `Artifact read` 網址） |
 | handoff | 舊專案（Claude Design）：見下方「舊專案」 |
 | export | 步驟 5 |
 | review | 步驟 6；使用者選擇交接 SDD 時步驟 7（見 SKILL.md 步驟 5 收尾分流） |
