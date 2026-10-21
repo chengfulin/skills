@@ -1,7 +1,7 @@
 # 步驟 8 實作迴圈（/speckit.implement，逐 story 閘門）
 
 僅由 SKILL.md 步驟 8 進入時讀取，**全程照本文件執行**；本文件是步驟 8 執行細節
-（索引準備、測試工具前置、tasks.md 勾選、逐 phase 迴圈、並行規劃、越界放行、
+（索引準備、測試工具前置、tasks.md 勾選、並行規劃、逐 phase 迴圈、越界放行、
 story 收尾 checklist）的唯一版本。完成準則與不變量在 workflow-stages.md「8 實作」節；入口訊號與 8R 重規劃在
 SKILL.md 步驟 8R 與 replan.md；「通用規則 N」「模板」指 SKILL.md 的通用規則。
 
@@ -33,6 +33,53 @@ ID；每次 implementer 回報（含分批、修正迴圈、失敗續作）後�
 
 勾選在閘門前就寫入，讓中斷後續跑看得到進度；story 是否完成仍以狀態檔旗標為準。
 
+**0P. 並行規劃（task 粒度、全域；觀察期：只產出批次建議，執行仍逐 phase 依序）**：
+索引準備與測試工具前置之後、Setup 開工之前執行。單位是 **task**，範圍是 tasks.md
+**全部未勾選的 task**（Setup／Foundational／各 story／Polish 一起排），只算 task
+之間的相依——phase 級的整體宣告（「Foundational 阻擋所有 story」「US2 相依 US1」）
+不構成衝突，analyzer 逐 task 找出真正需要的前置。未勾選 task 少於 2 個，或
+`python3 $SKILL_DIR/scripts/task-plan.py check --tasks <FEATURE_DIR>/tasks.md --plan
+<FEATURE_DIR>/parallel-plan.json` 印出 `plan=ok` → 跳過。
+   a. **切範圍**：每個 phase 一個 analyzer；未勾選 task 超過 20 個的 phase，依
+      `###` 小節或任務 ID 切成每段 ≤15 個（同一檔案的連號任務放同一段）。
+   b. 建空目錄 `${TMPDIR:-/tmp}/sdd-plan-<NNN>/`（已存在先清空），在**同一則訊息**
+      並行派 `sdd-impact-analyzer`，每段一個（依模板：專案根絕對路徑 + 範圍（phase
+      名或 `Txxx–Tyyy`）+ feature 目錄 + 模式 `plan` + 輸出檔
+      `${TMPDIR:-/tmp}/sdd-plan-<NNN>/<範圍>.txt`；不附初步假設）。超過 10 段時
+      分兩輪派，前一輪全部回報後再派下一輪（subagent 同時執行數有上限）。
+   c. 全部回報後跑：
+      ```bash
+      python3 $SKILL_DIR/scripts/task-plan.py build --tasks <FEATURE_DIR>/tasks.md \
+        --sets ${TMPDIR:-/tmp}/sdd-plan-<NNN> --out <FEATURE_DIR>/parallel-plan.json \
+        --state <FEATURE_DIR>/.sdd-workflow.json --root <專案根> --basis <codegraph|grep|greenfield>
+      ```
+      `--basis` 取各 analyzer 回報中最弱者。退出碼 3（`error=missing_sets`）→
+      對缺行 task 所屬的範圍重派一次；仍缺 → 視同閘門 FAIL，回報使用者。
+      腳本的判定規則（主對話不手算，也不改判）：任一成立即**衝突**——
+      - `寫入`：兩者寫入集合有同一檔案（檔名未定的 `目錄/*` 與同目錄任何路徑視為同檔）；
+      - `相依`：一方寫入的檔案出現在另一方讀取集合；
+      - `資源`：共用資源識別相同（migration 一律視為相同）；
+      - `契約`：一方契約變更所在檔出現在另一方的寫入或讀取集合；
+      - `宣告`：一方 Dep 列了另一方的 task ID，或列了另一方所屬的 phase 標籤；
+      - `未定`：任一方信心「低」（實際落點要等其他 task 實作後才能判定）——
+        與其他所有 task 都記為衝突，寧可錯殺。
+      分批：先依明文 Dep 做拓撲排序（同層依 tasks.md 順序；成環的 task 比照信心
+      低，與其他所有 task 衝突），衝突再依此順序定方向；
+      task 的批次＝1＋（衝突的前序 task 的最大批次）。同批＝判定可同時開工。
+   d. 腳本已把摘要寫入狀態檔 `steps.implement.parallel_plan`（schema 見
+      workflow-stages.md），完整規劃在 `parallel-plan.json`。立即
+      `git add -A && git commit -m "chore(sdd): 完成並行規劃（NNN）"`——避免規劃
+      檔混進 Setup 的越界檢查。
+   e. 向使用者回報（≤15 行，取自腳本輸出）：task 數／批次數／理論加速、衝突比例與
+      類型分布、關鍵路徑與前 3 個熱點檔、低信心 task；另列 **tasks.md 品質訊號**
+      ——`order_conflicts`（task 依賴排在後面的 task）、`cyclic`（明文相依成環，
+      已比照低信心處理）、`P_marked_conflicts`（標
+      `[P]` 卻被判衝突的 pair 數）與 analyzer 指出的「沒有 task 負責的必要改動」，
+      建議使用者是否回 tasks.md 修正（不設閘門，修正走 8R 或下次 feature 改善）。
+      註明「目前仍依 tasks.md 逐 phase 執行，本結果供評估並行實作用」。
+   之後照下方步驟 1 起逐 phase 執行；0P 的集合**不取代**步驟 2a 的邊界報告（前面
+   phase commit 後程式碼已變，邊界報告必須重做）。
+
 對 tasks.md 的每個 phase 依序（細節見 workflow-stages.md 的階段 8）：
 
 1. **Setup / Foundational**：派 `sdd-implementer`（依模板：專案根絕對路徑 +
@@ -44,34 +91,6 @@ ID；每次 implementer 回報（含分批、修正迴圈、失敗續作）後�
    修正迴圈）→ `git add -A && git commit -m "chore(sdd): 完成 <phase>（NNN）"` →
    `codegraph sync`（codegraph 可用時，下同）。基礎設施是全 feature 的地基，
    不設審查等於零把關入版控。
-1P. **並行規劃（觀察期：只產出分組建議，執行仍逐 story 依序）**：
-   Foundational（tasks.md 沒有此 phase 則 Setup）commit 並 `codegraph sync` 之後、
-   第一個 story 開工之前執行；未完成的 story 少於 2 個、或狀態檔已有
-   `steps.implement.parallel_plan` 且其 `stories` 涵蓋全部未完成 story → 跳過。
-   a. 在**同一則訊息**並行派 `sdd-impact-analyzer`，每個未完成 story 一個（依模板：
-      專案根絕對路徑 + story ID + feature 目錄 + 模式 `plan`；不附初步假設）。
-   b. 依各 story 的集合兩兩判定（路徑字串比對，不重新掃描）。任一成立即為**衝突**，
-      記下類型與證據（一行）：
-      - `寫入`：兩者寫入集合有同一檔案；
-      - `相依`：一方寫入集合的檔案／symbol 出現在另一方讀取集合；
-      - `資源`：共用資源有同一項（同類別且資源識別相同，migration 一律視為相同）；
-      - `契約`：一方的契約變更 symbol 出現在另一方的寫入或讀取集合，或另一方
-        新增了該契約的實作類別——文字上不衝突、合併後才編譯失敗的那一類；
-      - `宣告`：任一方宣告相依另一方。
-      優先順序：spec 的 P1（MVP）story 自成最前面的群組，其餘 story 的優先順序
-      只決定執行與合併順序，不構成衝突。任一方信心「低」→ 該 pair 一律記為
-      衝突（類型 `未定`），寧可錯殺。
-   c. 分組：依 tasks.md 的 story 順序逐一放入，story s 的群組編號＝1＋（與 s
-      衝突的前面 story 的最大群組編號；無則為 0）。P1 story 先在彼此之間依此規則
-      分組；其餘 story 的群組編號下限＝P1 的最大群組編號＋1。宣告相依指向後面的
-      story（順序矛盾）→ 不分組，回報使用者這是 tasks.md 的排序問題。
-   d. 寫入狀態檔 `steps.implement.parallel_plan`（schema 見 workflow-stages.md），
-      `git add -A && git commit -m "chore(sdd): 完成並行規劃（NNN）"`——立即
-      commit，避免狀態檔變更混進下一個 story 的越界檢查。
-   e. 向使用者回報（≤15 行）：分組、衝突清單（類型＋一行證據），並註明「目前
-      仍依 tasks.md 順序逐 story 執行，本結果供評估並行實作用」。不設閘門。
-   之後照步驟 2 逐 story 執行；1P 的集合**不取代**步驟 2a 的邊界報告（前面 story
-   commit 後程式碼已變，邊界報告必須重做）。
 2. **每個 User Story phase**：
    a. **影響邊界**：從 tasks.md 該 phase 的任務描述與 plan.md 的檔案規劃**列出**
       預期新增／修改的檔案與 symbol 清單作為初步假設（tasks.md 只取該 phase 段落，

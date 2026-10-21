@@ -1,7 +1,7 @@
-# 決策紀錄：sdd-harness 實作階段的 story 並行化
+# 決策紀錄：sdd-harness 實作階段的並行化
 
-- 日期：2026-10-21
-- 狀態：第一、二階段已採行；第三階段暫緩，待觀察資料決定
+- 日期：2026-10-21（同日修訂：第二階段改為 task 粒度全域規劃，見文末「修訂」）
+- 狀態：第一階段已採行；第二階段已改版為 task 粒度；第三階段暫緩，待觀察資料決定
 - 影響範圍：`skills/sdd-harness/`（步驟 8 實作迴圈）
 
 ## 背景
@@ -83,7 +83,7 @@ reviewer 兩道閘門把關，可以接受。
   `perl` 指令勾選、`grep` 計數確認。
 - `sdd-impact-analyzer` 的邊界報告新增「依賴的既有 symbol（讀取集合）」一節。
 
-### 第二階段（已採行）：並行規劃，觀察期只出建議
+### 第二階段（已採行，後由文末「修訂」改為 task 粒度）：並行規劃，觀察期只出建議
 
 - Foundational（無則 Setup）commit 之後、第一個 story 之前，新增步驟 1P：在同一
   則訊息並行派每個未完成 story 一個 `sdd-impact-analyzer`（`plan` 模式，輸出寫入／
@@ -122,3 +122,84 @@ reviewer 兩道閘門把關，可以接受。
   測試、commit 都要改成依路徑歸屬，複雜度高於 worktree，且仍有測試互相干擾。
 - **把優先級不同一律視為衝突**：會讓幾乎所有 story 依序，規劃失去意義。
 - **允許登錄點「只追加一行」的例外並行**：正是語意衝突的典型來源，觀察期不開放。
+
+## 修訂：第二階段改為 task 粒度、全域規劃（2026-10-21）
+
+### 觀察資料
+
+在一個已用本 harness 完成多個 feature 的專案上做了三輪回溯實驗（目標專案資訊不入
+版控，只留數字）。「批次」＝依衝突關係分層後可同時開工的一組；「加速」＝依序執行
+的單位數 ÷ 批次數，是不計工作量與合併成本的理論上限。
+
+| 實驗 | 單位與時間點 | 規模 | 判為衝突 | 分批結果 |
+|------|--------------|------|----------|----------|
+| A | story；Foundational 完成後（舊版 1P） | 5 個 feature、36 story、119 pair | 76% | 31 組（36 → 31，約 1.16×）；同組 pair 僅 6% |
+| B | task；同上時間點，只算 story 內外的 task | 同 5 個 feature、276 task、8,438 pair | 19%（只算 task 相依）／47%（story 級宣告套用到所有 task） | 128 批（2.2×）；story 依序＋story 內並行只有 1.46× |
+| C | task；analyze 完成、Setup 之前，含 Setup／Foundational／Polish，codegraph 索引 | 1 個 feature、133 task、8,778 pair | 17%（只算 task 相依）／62%（phase 級宣告） | 40 批（3.3×）；phase 依序＋phase 內並行 70 批（1.9×）；套 phase 宣告 63 批（2.1×） |
+
+其他發現：
+
+- **規劃本身準確，但粒度太粗**：實驗 A 被判可並行的 story pair，實際 commit 檔案零
+  交集（零誤判）；但衝突集中在少數共用熱點檔（登錄點、跨 story 擴充的 service、
+  被輪流加 decorator 的 controller），story 粒度下幾乎全部依序。
+- **phase／story 級宣告是最大的保守來源**：逐 task 拆開看，宣告「USx 依賴 USy」的
+  story 多半只有少數 task 真正需要對方先完成；把宣告套到所有 task 會讓跨 phase 衝突
+  從約 15% 升到 47–62%。
+- **`[P]` 標記不可直接採信**：同 phase 兩個都標 `[P]` 的 pair 有 39–43% 被判衝突——
+  測試要用另一 task 才建立的 symbol、兩個 task 寫同一個檔、或寫進同一個檔名未定的
+  目錄。
+- **低信心 task 影響大**：實驗 C 中 3 個「落點要等別的 task 實作後才知道」的 task，
+  把批次數從 31 拉到 40——但它們確實無法事前界定寫入集合，保守處理是對的。
+- **關鍵路徑由熱點檔與不可分割的編譯單元組成**：單一大檔被兩個 story 共 11 個 task
+  輪流修改、型別擴充的扇出改動必須同批完成，這兩類決定了並行上限。
+- **涵蓋率是目前唯一可驗的誤判指標**：實作一個 phase 一個 commit，無法逐 task 核對；
+  實際變更檔有 25–29% 不在任何 task 的寫入集合內（多為後面 phase 回頭修前面的測試、
+  實作時拆出的新檔），其中多數也被其他 phase 碰到——全域並行時最可能撞檔之處。
+- analyzer 逐 task 分析時會指出 tasks.md 的缺陷：相依方向寫反（task 依賴排在後面的
+  task）、跨 story 檔案衝突清單漏列、沒有任何 task 負責的必要改動。
+
+### 決策
+
+- 步驟 1P 改為 **0P**：移到進入步驟 8、Setup 開工之前，規劃 tasks.md **全部未勾選
+  task**（含 Setup／Foundational／Polish），單位是 task。
+- **只算 task 相依**：phase 級整體宣告不構成衝突；analyzer 逐 task 列出真正需要的
+  前置（tasks.md 明文或程式實質需要；TDD 順序不算，除非同檔）。只能指出 phase 時寫
+  phase 標籤，腳本視為與該 phase 每個 task 衝突。
+- **判定保守**：檔名未定的 `目錄/*` 與同目錄任何寫入視為同檔；**信心低＝實際落點要
+  等其他 task 實作後才能判定**，與其他所有 task 記為衝突。
+- 兩兩判定與分批交給 `scripts/task-plan.py`（數千個 pair，主對話不手算）：先依明文
+  相依拓撲排序、衝突再依此順序定方向，輸出批次表、關鍵路徑、熱點檔與 tasks.md 品質
+  訊號（相依方向寫反、`[P]` 被判衝突）。完整規劃寫 `specs/<NNN>/parallel-plan.json`，
+  狀態檔只放摘要，兩者隨 `chore(sdd): 完成並行規劃（NNN）` 入版控。
+- 仍是觀察期：執行順序不變（逐 phase 閘門）；完成報告改附集合涵蓋率與可能漏判。
+- 續跑與重規劃：`task-plan.py check` 確認規劃涵蓋所有未勾選 task，否則只對剩下的
+  task 重做 0P。
+
+### 對第三階段的影響
+
+並行實作的單位應是 **task 批次**而非 story：批次內的 task 分屬不同 story，story 級的
+validator／reviewer／commit 閘門要重新設計（例如批次 commit＋story 完成時驗收）。
+啟動門檻改為：數個 feature 的理論加速有實際價值（實驗 C 約 3×），且涵蓋率的「可能
+漏判」能靠規則收斂（例如 analyzer 必須列出會被波及的既有測試）。
+
+### 不採行
+
+- **把 story／phase 級宣告套到所有 task**：衝突升到 47–62%，抵銷 task 粒度的效益。
+- **以 tasks.md 的 `[P]` 作為可並行依據**：四成誤判。
+- **放寬檔名未定目錄的判定**（同目錄新檔視為不同檔）：實驗中只減少約 1% 衝突，
+  卻是實作時落在同一檔的主要來源，維持保守。
+
+### 驗證（同日）
+
+以實驗 C 的 feature 從 analyze 完成的 commit 照新流程走一次 0P（13 段 analyzer，
+Foundational 依小節切三段、分兩輪派）：133 task → 34 批（理論 3.9×）、衝突 18%；
+規劃 commit 只含 `parallel-plan.json` 與狀態檔、working tree 乾淨、`check` 正確判定
+涵蓋；把原本的實作 commit 依序回放到規劃 commit 之後，`verify` 找得到每個 phase 的
+commit，集合涵蓋率 77%（實驗 C 為 71%）。驗證過程修正三處：
+
+- analyzer 在要點寫了「要等後面的 task」卻沒列進 Dep → 定義改為排在後面的 task 也
+  照寫，順序矛盾交給腳本回報。
+- 索引存在時 analyzer 仍可能只用 grep → plan 模式改為必須用 codegraph，否則標頭
+  如實寫降級，主對話據此取 `--basis`。
+- 兩個 analyzer 對同一對 task 給出相反的相依方向，形成環 → 環上的 task 比照低信心，
+  與其他所有 task 衝突。

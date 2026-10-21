@@ -24,7 +24,7 @@ scope 固定 `sdd`；story commit 在主旨尾附 `（NNN, USk）` 供追溯（�
 | 時機 | 模板 | 範例 |
 |------|------|------|
 | Setup / Foundational phase 完成 | `chore(sdd): 完成 <phase>（NNN）` | `chore(sdd): 完成 Setup（001）` |
-| 並行規劃寫入狀態檔（implement-loop.md 步驟 1P）| `chore(sdd): 完成並行規劃（NNN）` | `chore(sdd): 完成並行規劃（001）` |
+| 並行規劃寫入 parallel-plan.json 與狀態檔（implement-loop.md 步驟 0P）| `chore(sdd): 完成並行規劃（NNN）` | `chore(sdd): 完成並行規劃（001）` |
 | User story 通過驗證與審查 | `feat(sdd): 實作 <story 標題>（NNN, USk）` | `feat(sdd): 實作檔案大小排序（001, US1）` |
 | 驗證/審查後的修正（若單獨 commit）| `fix(sdd): 修正 <問題摘要>（NNN, USk）` | — |
 | auto-commit 靜默跳過時的補救 | 沿用該事件在上表的訊息 | — |
