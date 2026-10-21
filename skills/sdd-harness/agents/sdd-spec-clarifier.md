@@ -1,6 +1,6 @@
 ---
 name: sdd-spec-clarifier
-description: 對 SDD 專案的 spec / plan / tasks 進行對抗式審查：檢查與專案憲章（constitution）的衝突、模糊、涵蓋缺口與跨文件不一致，回傳結構化發現清單。當 SDD 流程進行 clarify 或 analyze 階段、或需要獨立檢核規格與憲章一致性時使用。
+description: 對 SDD 專案的 spec / plan / tasks 進行對抗式審查：檢查與專案憲章（constitution）的衝突、模糊、涵蓋缺口、與上游資料（.specify/context/ 的 PM 文件、StoryBoard、設計稿）的逐例一致性，以及跨文件不一致，回傳結構化發現清單。當 SDD 流程進行 clarify 或 analyze 階段、或需要獨立檢核規格與憲章一致性時使用。
 tools: Read, Grep, Glob, Bash
 model: sonnet
 effort: high
@@ -38,9 +38,36 @@ effort: high
    以及缺少量化定義的非功能需求。
 4. **涵蓋缺口**：每個 user story 是否都有驗收情境？邊界條件（空輸入、錯誤路徑、權限不足）
    是否被規格化？
-5. **跨文件一致性**（僅 `full` 範圍）：spec 的每個需求在 plan 有對應設計、在 tasks 有對應任務；
+5. **上游資料一致性**（兩種範圍都做）：`<專案根>/.specify/context/` 是上游需求資料的
+   約定位置（PM 文件、StoryBoard、設計稿／Prototype、外部權威）。目錄不存在 → INFO
+   「無上游資料目錄，略過」，繼續下一步。存在時：
+   - **找來源**：spec 有「規格來源」段（`<!-- spec-source:begin -->`）→ 以其來源表與
+     權威劃分為準；沒有 → 用 spec 標題與 FR 的關鍵詞 grep 檔名與內容，找出與本 feature
+     相關的檔案。**深入比對最多 8 個來源檔**，依與 FR 的相關度挑選。
+   - **依媒材取證**（報告版型、前端畫面以「看得到的樣子」為準，不靠抽文字）：
+     - 截圖／圖檔（png、jpg）：直接 Read 看圖，是版型與畫面的首選證據。
+     - HTML 設計稿／Prototype：先 grep 結構與文案（`grep -o -m <n>` 取片段，**不整份
+       Read**）；要確認排版、哪些元素實際顯示時，能用 headless 瀏覽器（如 Chrome
+       `--headless --screenshot`、`npx playwright screenshot`）就截圖到系統暫存目錄
+       再 Read，不能就註明「未目視，僅比對 HTML 結構」。
+     - PDF：以頁面影像為主。有對應截圖用截圖；沒有就用 Read 的 `pages` 參數只看相關
+       頁（單次 ≤5 頁），不抽全文。
+     - 試算表等其他格式：只取與 FR 相關的工作表或欄位片段。
+     - 單檔超過約 1MB 一律只取片段或截圖。
+   - **逐例比對**：來源給的每個範例、畫面或案例都要對一次，不能只看第一個。檢查 spec
+     規定的結構、必填／選填元素、欄位、順序與文案，是否與**每一個**範例一致。典型漏網：
+     spec 規定「每格必有 X」，設計稿三個範例只有一個有 X。
+   - **嚴重度**：spec 與權威來源不一致且未登記偏離 → HIGH；來源彼此不一致（範例之間、
+     StoryBoard 與設計稿之間）→ HIGH，且必須列入「需與使用者釐清的問題」，請使用者
+     （或其代轉的 PM）裁決以哪個為準。
+   - **範圍排除不是豁免**：spec 的「明確不含」或需求輸入的硬限制（例如「不改某段文案」
+     「版面不變」），若與上游來源衝突，**不得**當成範圍外略過——同樣列為 HIGH 並提問，
+     因為範圍本身可能要隨裁決改變。
+   - 回報時列出已比對的來源檔（路徑與取證方式：截圖／HTML 結構／PDF 頁碼），以及
+     **因上限或格式略過的相關檔**（路徑與原因）；找不到相關來源也要明說，不要默默跳過。
+6. **跨文件一致性**（僅 `full` 範圍）：spec 的每個需求在 plan 有對應設計、在 tasks 有對應任務；
    plan 的技術決策沒有超出或違反 spec；tasks 沒有幽靈任務（對不回 spec/plan 的項目）。
-6. **基線漂移**（若 `.specify/memory/baseline/manifest.json` 存在且其 `repo`
+7. **基線漂移**（若 `.specify/memory/baseline/manifest.json` 存在且其 `repo`
    不是 `custom`）：與 sdd-baseline skill 副本的 manifest（`$SDD_BASELINE_DIR`，
    預設 `~/.claude/skills/sdd-baseline/references/baseline/manifest.json`）比對
    `head_commit`，不一致時回報「基線已更新」（INFO，附兩個 sha），不自行更新。
@@ -63,7 +90,7 @@ effort: high
 ```
 
 - 嚴重度定義：**CRITICAL**＝違反憲章 MUST 條款或規格自相矛盾；**HIGH**＝可驗證性缺失、
-  涵蓋缺口；**MEDIUM**＝模糊措辭、輕微不一致；**INFO**＝基線漂移、建議事項。
+  涵蓋缺口、與上游來源不一致或來源彼此不一致；**MEDIUM**＝模糊措辭、輕微不一致；**INFO**＝基線漂移、建議事項。
 - 位置必須精確到檔案與行號（或章節標題），讓 orchestrator 能直接定位修正。
 - 無發現時明確回覆「審查結論：PASS」並簡述已檢核的範圍，不要編造問題湊數。
 
@@ -81,6 +108,7 @@ effort: high
 ## 硬約束
 
 - **唯讀**：不得修改、建立或刪除**目標專案內**的任何檔案；修正一律由主對話套用。
-  唯一例外：回報溢出內容可寫入系統暫存目錄（見回報合約）。
+  唯一例外：回報溢出內容與上游資料截圖可寫入系統暫存目錄（見回報合約）。
 - 不直接向使用者提問；把問題列在「需與使用者釐清的問題」讓 orchestrator 轉達。
-- Bash 僅用於唯讀操作（`git log`、`ls`、`cat`）與寫入上述暫存檔。
+- Bash 僅用於唯讀操作（`git log`、`ls`、`cat`）、寫入上述暫存檔，以及把上游資料
+  截圖到系統暫存目錄。

@@ -20,6 +20,10 @@ speckit-implement 派 `sdd-implementer`，見步驟 8），而**釐清、影響�
   （`$SDD_BASELINE_DIR`，預設 `$SKILL_DIR/../sdd-baseline/references/baseline`）；
   使用者在 prompt 指定自訂憲章（檔案、目錄或貼上內容）時以其為準。細節在
   constitution-assembly.md。
+- 上游需求資料：目標專案的 `.specify/context/`（PM 文件、StoryBoard、設計稿／Prototype、
+  外部權威；make-mockup-harness 的交接包也放在這裡）。步驟 3 寫 spec 時參照；
+  `sdd-spec-clarifier` 在步驟 4、7 逐例比對 spec 與這些來源（見其定義檔「上游資料一致性」）。
+  目錄不存在時照常進行。
 - 參考文件**按需讀取，不要一次全讀**（token 紀律）：
   - `$SKILL_DIR/references/workflow-stages.md`：完成準則、狀態檔 schema、續跑演算法
     ——步驟 0b 與每階段收尾時讀對應小節
@@ -65,10 +69,12 @@ speckit-implement 派 `sdd-implementer`，見步驟 8），而**釐清、影響�
    inline 執行**、不用 Skill tool——單一路徑，避免兩種執行方式行為分歧。
    同一個 speckit skill 本 session 已 Read 過且檔案未變時**不要重讀**——直接依
    已載入的指示執行。
-   「inline」指**不經 Skill tool**、照文件執行，不限定執行者。兩個例外由
-   subagent 在**各自 context** 以同樣的 Read-照做方式執行：speckit-analyze →
-   general-purpose（步驟 7）；speckit-implement → `sdd-implementer`（步驟 8，
-   主對話**不讀** speckit-implement 的 SKILL.md，只把路徑交給它）。
+   「inline」指**不經 Skill tool**、照文件執行，不限定執行者。以下例外由
+   subagent 在**各自 context** 以同樣的 Read-照做方式執行（主對話**不讀**這些
+   SKILL.md，只把路徑交給它）：speckit-plan、speckit-tasks → general-purpose
+   （步驟 5、6）；speckit-analyze → general-purpose（步驟 7）；speckit-implement →
+   `sdd-implementer`（步驟 8）。plan／tasks 要大量讀 spec 與既有程式碼，留在主對話
+   會讓後段閘門在壓縮後失焦；specify 與 clarify 需要與使用者往返，留在主對話。
 2. **hooks 的處理**：speckit skill 內文的 hook dispatch 指示——mandatory hooks
    （`speckit.git.initialize`、`speckit.git.feature`）照做；optional hooks（commit 類）
    **中途一律略過**，統一由階段收尾的 commit 驗證程序處理（保持**每個 commit 點**
@@ -115,6 +121,10 @@ speckit-implement 派 `sdd-implementer`，見步驟 8），而**釐清、影響�
    回讀。需要回顧進度或歷史時，查狀態檔與 `git log --oneline`。subagent 回報受
    各 agent 定義的**回報合約**約束（正文上限以各定義檔為準，多為 ≤80 行；
    溢出內容在暫存檔），溢出檔只在需要細節時才讀。
+   **新任務派新 agent**：跨階段或換任務一律重新派遣，prompt 只附必要的檔案路徑與
+   前輪結論；不以 SendMessage 把新任務交給已完成任務的 agent（舊 context 會疊上
+   新任務，實測可從約 175k 漲到 210k 以上）。同一任務的續作（受阻後補資訊、中斷
+   續跑）才續用原 agent。
 
 ## 步驟 0：前置檢查（每次啟動都執行）
 
@@ -239,14 +249,20 @@ speckit-constitution → 寫 README「SDD 導入宣告」與 `sdd-adoption.json`
 1. 讀 `.specify/memory/baseline/tech-standards.md`，以其建議為預設選項，用
    AskUserQuestion 確認技術選型（語言/框架/測試工具/部署形式）。偏離建議值時
    請使用者給一句理由，記入 plan.md（選型原則要求記錄偏離）。
-2. Read `.claude/skills/speckit-plan/SKILL.md` inline 執行。
+2. **派 general-purpose subagent 執行 speckit-plan**（通用規則 1 例外）：prompt 給
+   專案根絕對路徑、feature 目錄、已確認的技術選型與偏離理由，指示「Read
+   `<專案根>/.claude/skills/speckit-plan/SKILL.md` 照做；mandatory hooks 照做、
+   optional hooks 一律略過；不 commit、不改狀態檔；回報產出檔清單、關鍵設計決策與
+   需使用者裁決的事項，正文 ≤80 行」。回報列出的裁決事項帶進下一步的閘門。
 3. **人為 review 閘門**（通用規則 7，觸發點 `plan`）：通過才往下。
 4. `steps.plan.done=true` → `after_plan` commit 驗證。
 
 ## 步驟 6：任務（/speckit.tasks）
 
-1. Read `.claude/skills/speckit-tasks/SKILL.md` inline 執行。確認 tasks.md 依
-   user story 分 phase 且各 story 有 Checkpoint（實作迴圈靠它切分）。
+1. **派 general-purpose subagent 執行 speckit-tasks**（同步驟 5 的派遣要求，Read
+   `<專案根>/.claude/skills/speckit-tasks/SKILL.md`）。回報須含各 phase 的任務數與
+   每個 story 預計修改的檔案數；你用 grep 確認 tasks.md 依 user story 分 phase 且
+   各 story 有 Checkpoint（實作迴圈靠它切分），不整份 Read。
 2. `steps.tasks.done=true` → `after_tasks` commit 驗證。
 
 ## 步驟 7：一致性分析（/speckit.analyze）

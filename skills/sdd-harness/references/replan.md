@@ -52,7 +52,7 @@
 
 - 依 SKILL.md 步驟 5 執行。技術選型未變 → 不重問使用者（閘門附件改附
   plan.md 既有的選型與偏離紀錄）；修訂涉及選型 → 重新確認並記錄偏離理由。
-- inline 執行 speckit-plan 時**明確要求 plan 記錄「已建成現況」**：US1..k 已
+- 派遣 speckit-plan 的 subagent 時**明確要求 plan 記錄「已建成現況」**：US1..k 已
   commit 的檔案、行為與可沿用部分——plan 與現實脫節＝重規劃白做。
 - 人為 review 閘門（通用規則 7，觸發點 `plan`）→ `resume_at="tasks"` →
   `after_plan` commit 驗證。
@@ -60,7 +60,7 @@
 ### `tasks`：重跑任務（加法不變量）
 
 - 重生前先留副本：`cp <FEATURE_DIR>/tasks.md <系統暫存目錄>/tasks.pre-replan.md`。
-- 依 SKILL.md 步驟 6 inline 執行 speckit-tasks，**外加四條指示**：
+- 依 SKILL.md 步驟 6 派 subagent 執行 speckit-tasks，prompt **外加四條指示**：
   1. 已完成 phase 與其 `[X]` 勾選**原樣保留**；
   2. 既有 story ID **不得重編號**（狀態檔 `stories` 鍵與續跑演算法依賴它）；
   3. 變更一律以**新增**表達：新 task 掛既有未完成 phase，或新 story phase

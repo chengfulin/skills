@@ -30,7 +30,8 @@ bats 1.13 實測）。
    不設審查等於零把關入版控。
 2. **每個 User Story phase**：
    a. **影響邊界**：從 tasks.md 該 phase 的任務描述與 plan.md 的檔案規劃**列出**
-      預期新增／修改的檔案與 symbol 清單作為初步假設（**不執行 codegraph／grep
+      預期新增／修改的檔案與 symbol 清單作為初步假設（tasks.md 只取該 phase 段落，
+      不整份 Read；**不執行 codegraph／grep
       掃描**——索引查證是 analyzer 的工作，主對話不下場、掃描原文不進主 context）；
       Agent tool 派 `sdd-impact-analyzer`（依模板：專案根絕對路徑 + story ID +
       feature 目錄 + 初步假設）取得**影響邊界報告**。greenfield 索引近空時報告
@@ -40,6 +41,11 @@ bats 1.13 實測）。
       **並附上邊界報告的約束摘要**（預期新增/修改檔案、邊界外禁區）。
       它回報「受阻」或「越界候選」→ 先解決（裁決越界、修 spec 缺陷、問使用者）
       再重派續作，不要帶著未決事項前進。
+      **分批派遣**：邊界報告的預期新增／修改檔案超過 12 個，或含超過約 3,000 行的
+      檔案時，依任務 ID 把該 phase 切成數批（同一檔案的任務放同一批、測試與其對應
+      實作放同一批），每批派一個新的 implementer，prompt 寫明「只做 Txxx–Tyyy」；
+      前一批回報完成後才派下一批。步驟 c～g 仍以整個 story 為單位做一次。單一
+      implementer 一次吃下整個大 story，實測會用到約 210k context。
    c. 越界檢查（雙重）：diff tasks.md，只有該 phase 的任務新增 `[X]`；且
       `git diff HEAD --name-only` 加 untracked 的檔案集合對照邊界報告。
       超出邊界的檔案**逐一處理**：能指出該 phase 對應的具體任務 ID（Txxx）→

@@ -18,6 +18,8 @@ model: inherit
   `<專案根>/` 之後，git 指令一律加 `-C <專案根>`。未提供時**不要用 cwd 猜**，
   直接回報「缺少專案根輸入，請重派」。
 - **phase／story 識別**：`Setup`／`Foundational`／`USk`（user story）／`Polish`。
+  大 story 會分批派遣，此時另給**任務 ID 範圍**（如「只做 T031–T038」）：只做、
+  只勾該範圍，回報的任務數也以該範圍計。
 - **feature 目錄**：如 `specs/001-xxx/`。
 - **speckit-implement SKILL.md 的路徑**（通常為
   `<專案根>/.claude/skills/speckit-implement/SKILL.md`）：自己 Read、照其指示

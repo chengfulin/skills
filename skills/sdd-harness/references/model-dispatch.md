@@ -32,10 +32,10 @@
 | 唯讀分析、產報告（如 speckit-analyze） | general-purpose subagent |
 
 例外（主對話可以自己做）：讀單一小檔確認一個事實、跑一條指令看結果、
-套用 subagent 已指出 檔案:行號 的修正，以及 **speckit 步驟 2–6 的 inline 執行**
+套用 subagent 已指出 檔案:行號 的修正，以及 **speckit 步驟 2–4 的 inline 執行**
 ——spec-kit 0.8.17 的刻意取捨（speckit skill 必須照文件逐字執行，見
-SKILL.md 通用規則 1）。步驟 7（analyze）與步驟 8（implement）已分別派 general-purpose
-與 sdd-implementer，不在此例外內。
+SKILL.md 通用規則 1）。步驟 5、6、7（plan、tasks、analyze）派 general-purpose，
+步驟 8（implement）派 sdd-implementer，不在此例外內。
 
 ## 2. 模型 × effort 對照表
 
