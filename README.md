@@ -8,12 +8,11 @@
 .
 ├── skills/          # Skill 定義，每個 skill 一個資料夾，內含 SKILL.md
 │   ├── git-commit/
-│   ├── make-mockup-harness/
+│   ├── make-mockup-harness/ # 內含 agents/：該 skill 專用的兩個 subagent（以 scripts/install.sh 安裝）
 │   ├── make-storyboard/
 │   ├── sdd-baseline/
-│   ├── sdd-harness/ # 內含 agents/：該 skill 專用的六個 subagent（以 scripts/install.sh 安裝）
+│   ├── sdd-harness/         # 內含 agents/：該 skill 專用的六個 subagent（以 scripts/install.sh 安裝）
 │   └── tech-mentor/
-├── agents/          # 跨 skill 共用的 subagent 定義（預留）
 └── LICENSE
 ```
 
@@ -52,11 +51,13 @@ cp -r skills/tech-mentor /path/to/project/.claude/skills/
 
 安裝後在 Claude Code 中輸入 `/<skill-name>` 即可呼叫，或由 Claude 依描述自動判斷使用時機。
 
-帶有 subagent 的 skill（目前是 `sdd-harness`）另需把 `agents/*.md` 連到 `~/.claude/agents/`，
-Claude Code 才找得到它們；用該 skill 的安裝腳本一次處理 skill、agents 與它預設依賴的 `sdd-baseline`：
+帶有 subagent 的 skill（`sdd-harness`、`make-mockup-harness`）另需把 `agents/*.md` 連到 `~/.claude/agents/`，
+Claude Code 才找得到它們；用該 skill 的安裝腳本一次處理 skill、agents 與它預設依賴的同 repo skill
+（`sdd-baseline`、`make-storyboard`）：
 
 ```bash
 bash skills/sdd-harness/scripts/install.sh
+bash skills/make-mockup-harness/scripts/install.sh
 ```
 
 ## 新增 Skill
