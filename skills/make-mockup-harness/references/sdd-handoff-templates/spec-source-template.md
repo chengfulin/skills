@@ -1,10 +1,10 @@
 # spec.md「規格來源」範本段落（v3）
 
 > 用途：feature 以 StoryBoard 與 Prototype 為依據時，放在 spec.md 開頭（`**Input**` 之後、`## Clarifications` 之前），為必填段落。
-> 來源：歸納 red-ap 017（來源表、StoryBoard 優先）、022（第三方權威、部署後目視重做）、025（版面依設計稿、偏離分類）的做法。
+> 來源：歸納多個以 StoryBoard 與設計稿為依據的 feature 實務：來源表與 StoryBoard 優先、第三方權威與部署後目視重做、版面依設計稿與偏離分類。
 > `<!-- -->` 為填寫指引，產出 spec 時刪除；`<!-- spec-source:begin -->`／`end` 錨點保留，供機械檢查定位。
 > 本檔由 make-mockup-harness 步驟 7 的 `pack-sdd-handoff.sh` 複製到開發 repo 的 `.specify/context/_shared/`。
-> 範例 sha256 取自 `mvp-dev-suites` 現行檔案（2026-10-01），實際交接時須以複製到 `.specify/context/` 的檔案重新計算。
+> 範例中的 sha256 僅為示意，實際交接時須以複製到 `.specify/context/` 的檔案重新計算。
 
 ---
 
