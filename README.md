@@ -7,6 +7,7 @@
 ```
 .
 ├── skills/          # Skill 定義，每個 skill 一個資料夾，內含 SKILL.md
+│   ├── eli5-mentor/         # 依賴 eli5（Claude Community plugin）與 tech-mentor
 │   ├── git-commit/
 │   ├── make-mockup-harness/ # 內含 agents/：該 skill 專用的兩個 subagent（以 scripts/install.sh 安裝）
 │   ├── make-storyboard/
@@ -20,6 +21,7 @@
 
 | Skill | 說明 |
 | --- | --- |
+| [eli5-mentor](skills/eli5-mentor/) | 由淺入深的圖解指引：同主題先用 `eli5` 產白話大圖版、再用 `tech-mentor` 產工程師分層版，合併成一份 HTML artifact |
 | [git-commit](skills/git-commit/) | 依 Angular 格式與繁體中文規範整理變更並建立 git commit |
 | [make-mockup-harness](skills/make-mockup-harness/) | 以 orchestrator 帶 SA 從需求走到可互動 Mockup：Story Board → Design Brief → 互動 mockup（artifact）→ 凍結版本 → 一致性檢核 → 升版，可選打包中性的開發交接包 |
 | [make-storyboard](skills/make-storyboard/) | 以主任 SA 視角帶 junior SA 釐清需求，產出可直接轉成互動 Mockup 的 Story Board，支援依回饋升版 |
