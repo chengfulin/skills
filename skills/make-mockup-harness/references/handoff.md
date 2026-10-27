@@ -77,6 +77,7 @@
    - `revisions.md` 的 v<N> 列「變更摘要」末尾加「；已交付開發（YYYY-MM-DD）」。
    - commit：`handoff(<slug>): v<N> 交付開發`。
    - 告知使用者：把 `handoff/v<N>/` 整個目錄（或其 git 路徑）交給開發者，從 `index.md` 開始；
+     開發者讓 agent 開工時，在 prompt 指定交接包路徑並以其 `AGENTS.md` 為起點（範例在 `index.md` 開頭）；
      用 sdd-harness 開發時，放進開發 repo 的方式見該 skill 的 `references/source-package.md`。
 
 ## 開發回寫

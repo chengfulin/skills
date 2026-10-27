@@ -114,8 +114,8 @@ handoff/v<N>/
 └── reference/          # brief、一致性檢核、回饋（參考）
 ```
 
-開發者把整個目錄放進開發 repo（位置不限）並 commit，在 repo 根的 AGENTS.md／CLAUDE.md 加一行指向它，
-用什麼開發流程都行，不需要本 skill。用 sdd-harness 時的放法與各階段規則在 sdd-harness 的
+開發者把整個目錄放進開發 repo（位置不限）並 commit，開工時在 prompt 指定交接包路徑、以其 `AGENTS.md` 為起點，
+用什麼開發流程都行，不需要本 skill。交接包只屬於該次迭代，不寫進 repo 根的常駐 AGENTS.md／CLAUDE.md。用 sdd-harness 時的放法與各階段規則在 sdd-harness 的
 `references/source-package.md`。開發完成後交回 `handback-to-sa.md`，SA 以步驟 6 升版。做 mockup 與做開發可以是不同人。
 
 ## 設計決策
