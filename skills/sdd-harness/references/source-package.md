@@ -13,8 +13,9 @@
 2. 整個目錄複製到 `<來源目錄>`，以 `AGENTS.md` 的 sha256 表重算核對 `storyboard.md` 與 `prototype/index.html`，再 commit：
    `docs(context): 新增 <slug> v<N> 規格來源（StoryBoard＋Prototype）`。
    先 commit 的原因：步驟 0 的 dirty tree 分類表沒有 `.specify/context/` 的來源檔，未 commit 會歸為「不明」而中斷。
-3. 使用者以一句話啟動即可，例如「開新 feature『<title>』，規格來源 `.specify/context/<slug>/v<N>/`，設計系統模式 A／B」；
-   設計系統模式沒給就在步驟 5 問。
+3. 使用者在啟動的 prompt 指定來源包位置與起點即可，例如「開新 feature『<title>』，規格來源 `.specify/context/<slug>/v<N>/`，
+   先讀其 `AGENTS.md`；設計系統模式 A／B」；設計系統模式沒給就在步驟 5 問。來源包只屬於這個 feature，
+   不寫進 repo 根的 AGENTS.md／CLAUDE.md。
 
 ## 0. 全程規則
 

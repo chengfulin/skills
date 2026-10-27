@@ -96,7 +96,8 @@ fill_ref='{填：涵蓋的章節或 US}'
   echo "「${title}」v${n} 的需求交接包，${today} 交付。整個目錄原樣放進開發 repo（位置不限）並 commit 後唯讀；新版另開目錄。"
   echo
   echo "- **人**：先讀 \`handoff-notes.md\`，再依下表開檔。"
-  echo "- **AI agent**：規則在 \`AGENTS.md\`（\`CLAUDE.md\` 匯入同一份）。agent 從 repo 根開工時，在根目錄的 AGENTS.md／CLAUDE.md 加一行指標：\`需求來源見 <本目錄路徑>/AGENTS.md\`。"
+  echo "- **AI agent**：本包只屬於這次迭代，在開工的 prompt 裡指定位置與起點，例如：\`需求來源：<本目錄路徑>（${title} v${n}）。先讀 <本目錄路徑>/AGENTS.md，照其讀取順序進行。\`"
+  echo "  repo 根的 AGENTS.md／CLAUDE.md 是常駐設定，不放本包的指標，否則下一版交接後仍會指向本版。"
   echo "- **找來源**：依「取證方式」開檔，只讀「涵蓋」指到的段落；規格與任務以錨點（見 \`AGENTS.md\`「錨點」）指回本表的涵蓋項。"
   echo
   echo "| 路徑 | 用途 | 媒材 | 大小 | 權威 | 取證方式 | 涵蓋（US／畫面／章節） |"
