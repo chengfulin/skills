@@ -42,8 +42,8 @@
 `designSystem.source` 是 repo 內 tokens 檔路徑或設計系統 artifact 網址。
 `claudeDesign` 只存在於舊專案（見「舊專案」），新狀態檔填 `null`；舊專案的 `briefSentAt` 鍵保留不改名。
 `versions[]` 每版一筆，欄位缺值為 `null`，不要省略鍵。
-`handoff` 在步驟 7 交接後填 `{"date": "YYYY-MM-DD", "sha256": "<prototype sha256>", "targetRepo": null, "specDir": null}`，
-後兩欄由開發者告知後補；舊狀態檔沒有這個鍵時視為 `null`。
+`handoff` 在步驟 7 交接後填 `{"date": "YYYY-MM-DD", "sha256": "<prototype sha256>", "targetRepo": null, "targetPath": null}`，
+後兩欄由開發者告知後補（`targetPath`：交接包在開發 repo 的位置）；舊狀態檔沒有這個鍵時視為 `null`，舊鍵 `specDir` 視同 `targetPath`。
 
 ## 完成準則
 
@@ -87,11 +87,11 @@
 - 被取代的規則以刪除線保留在對應 User Story 末尾。
 - 狀態檔 `currentVersion = N+1`，`versions[]` 新增一筆空殼，`stage: iterate`。
 
-### §7 交接 SDD
-- `handoff/v<N>/SDD-START.md` 與 `handoff/v<N>/.specify/context/` 存在，`pack-sdd-handoff.sh` 的 `check_*` 全數 ok。
-- `prototype/screens/` 至少每個畫面一張，`sdd-input.md` 截圖索引與檔案一一對應。
+### §7 交接開發
+- `handoff/v<N>/` 含 `index.md`、`AGENTS.md`、`CLAUDE.md`、`handoff-notes.md`，`pack-handoff.sh` 的 `check_*` 全數 ok。
+- `prototype/screens/` 至少每個畫面一張，`handoff-notes.md` 截圖索引與檔案一一對應。
 - `index.md` 表格列無殘留待填欄，「涵蓋」欄的 US 與畫面清單與 storyboard、brief 一致。
-- `sdd-input.md` 無殘留 `{…}` 待填欄位與 `<!-- -->` 指引；US 對照 Priority 與補問清單答案已由 PM 填齊。
+- `handoff-notes.md` 無殘留 `{…}` 待填欄位與 `<!-- -->` 指引；US 對照 Priority 與補問清單答案已由 PM 填齊。
 - 狀態檔 `stage: handed-off`，`versions[N-1].handoff.date`、`sha256` 填入；`revisions.md` v<N> 列註記已交付。
 
 ## 續跑演算法
@@ -107,7 +107,7 @@
 | mockup | 步驟 3 迭代中：先看 `builds.md` 有無「已派遣」未完成的 build（有就重派或標「未採用」），再問使用者是否已可凍結，是就步驟 4，否則繼續迭代（跨 session 先 `Artifact read` 網址） |
 | handoff | 舊專案（Claude Design）：見下方「舊專案」 |
 | export | 步驟 5 |
-| review | 步驟 6；使用者選擇交接 SDD 時步驟 7（見 SKILL.md 步驟 5 收尾分流） |
+| review | 步驟 6；使用者選擇交接開發時步驟 7（見 SKILL.md 步驟 5 收尾分流） |
 | iterate | 步驟 2（產 v<currentVersion> brief） |
 | handed-off | 步驟 6（有開發回寫或新回饋時升版；否則告知本版已交付，流程可停） |
 

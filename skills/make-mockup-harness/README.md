@@ -11,7 +11,7 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
              ▲                                                              │
              └──────── 6 回饋回寫、升版 ◄──── 5 一致性檢核 ◄────────────────┘
                               ▲                      │
-                 handback-to-sa.md（開發回寫）        └──► 7 交接 SDD（選配）──► sdd-harness 開發 repo
+                 handback-to-sa.md（開發回寫）        └──► 7 交接開發（選配）──► 開發 repo
 ```
 
 ---
@@ -20,7 +20,7 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 
 | 檔案 | 說明 |
 |------|------|
-| `SKILL.md` | orchestrator 主規則：6 階段＋選配的交接 SDD、通用規則（含派工與模型對照表）、每步驟指示 |
+| `SKILL.md` | orchestrator 主規則：6 階段＋選配的交接開發、通用規則（含派工與模型對照表）、每步驟指示 |
 | `agents/mockup-brief-writer.md` | 步驟 2 的 subagent：讀 storyboard 推導畫面、狀態、假資料寫成 brief（sonnet + high；v1 覆寫 opus） |
 | `agents/mockup-builder.md` | 步驟 3 的 subagent：依 build request 產出 mockup HTML 快照與產出紀錄，不發布、不問使用者（sonnet + high）；微修由主對話以 inline build 直接改 |
 | `agents/mockup-consistency-checker.md` | 步驟 5 的 subagent：獨立 context 檢核凍結 mockup 與 storyboard 的一致性，含 Chrome 操作驗證（sonnet + high；交接版覆寫 opus） |
@@ -31,8 +31,8 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 | `references/legacy-claude-design-handoff.md` | （舊）Claude Design 網站的 Chrome 交接程序，只供 2026-12-14 前舊專案收尾 |
 | `references/consistency-check.md` | 一致性檢核程序、操作驗證、五類報告格式 |
 | `references/revisions.template.md` | 版本 ↔ 回饋 ↔ User Story ↔ 畫面 對照表 |
-| `references/sdd-handoff.md` | 步驟 7 交接 SDD：前提、截圖、sdd-input、PM 補答、開發回寫 |
-| `references/sdd-handoff-templates/` | 交接包範本：`spec-source-template.md`（spec 規格來源段）、`sdd-source-instructions.template.md`（sdd-harness 各階段補充指示）、`sdd-input.template.md`、`sdd-start.template.md`（開發者啟動說明） |
+| `references/handoff.md` | 步驟 7 交接開發：前提、截圖、handoff-notes、PM 補答、開發回寫 |
+| `references/handoff-templates/` | 交接包範本：`AGENTS.template.md`（給 AI agent 的讀取規則、權威劃分、錨點、回寫格式）、`CLAUDE.template.md`（匯入 AGENTS.md）、`handoff-notes.template.md`（交接說明） |
 | `scripts/install.sh` | 冪等安裝：symlink skill、agents 到 `~/.claude/`，順帶連上同 repo 的 `make-storyboard` |
 | `scripts/mockup-root.sh` | 解析產物根目錄（讀 `.make-mockup.json`，預設 `make-mockups/`） |
 | `scripts/detect-stage.sh` | 續跑偵測：讀狀態檔印出階段與下一步 |
@@ -40,7 +40,7 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 | `scripts/extract-screens.sh` | 從單檔 HTML 以關鍵字取證，避免整份讀入 context |
 | `scripts/check-js.sh` | 以 `node --check` 檢查 mockup 內 inline script 的語法，錯誤行號對應 HTML 行號；builder 自查與 inline 微修用 |
 | `scripts/serve-mockup.sh` | 以本機 http server 開啟凍結的 mockup，供操作驗證 |
-| `scripts/pack-sdd-handoff.sh` | 步驟 7：前提機械檢查，把 v<N> 打包成開發 repo 的 `.specify/context/` 結構、代入範本、產生規格來源索引 `index.md` |
+| `scripts/pack-handoff.sh` | 步驟 7：前提機械檢查，把 v<N> 打包成中性交接包、代入範本、產生文件索引 `index.md` |
 
 依賴同目錄的 `make-storyboard` skill（步驟 1 與 6 以 Read 方式 inline 執行）。
 
@@ -48,7 +48,7 @@ storyboard 與 mockup 一致性檢核 → 回饋回寫升版。每個版本的�
 
 ## 範例
 
-以「水滸傳人物時間軸」為題實際跑完的產物（v1 → v2 升版的 Design Brief、回饋紀錄、凍結的 mockup，以及步驟 7 的 SDD 交接包）：
+以「水滸傳人物時間軸」為題實際跑完的產物（v1 → v2 升版的 Design Brief、回饋紀錄、凍結的 mockup，以及步驟 7 的交接包）：
 [chengfulin/demo_skill_make-mockup-harness](https://github.com/chengfulin/demo_skill_make-mockup-harness/tree/main)
 
 ---
@@ -95,24 +95,28 @@ make-mockups/<slug>/
 ├── reviews/v<N>-consistency.md
 ├── feedback/                  # artifact 留言、客戶回饋
 ├── revisions.md               # 版本對照表
-├── handoff/v<N>/              # 步驟 7 產出：SDD-START.md ＋ .specify/context/（整包交給開發者）
+├── handoff/v<N>/              # 步驟 7 產出：交接包（整包交給開發者）
 └── .mockup-workflow.json      # 狀態檔，供續跑
 ```
 
-## 交接 SDD（步驟 7，選配）
+## 交接開發（步驟 7，選配）
 
-步驟 5 一致性檢核完成、沒有待改項時選「交接 SDD」，harness 會把 v<N> 打包成 sdd-harness 開發 repo 可直接複製的結構：
+步驟 5 一致性檢核完成、沒有待改項時選「交接開發」，harness 會把 v<N> 打包成與開發流程無關的交接包：
 
 ```
 handoff/v<N>/
-├── SDD-START.md                           # 開發者照貼的啟動 prompt 與步驟
-└── .specify/context/
-    ├── _shared/{spec-source-template.md, sdd-source-instructions.md}
-    └── <slug>/v<N>/{index.md, storyboard.md, sdd-input.md, prototype/, reference/}
+├── index.md            # 文件索引：每檔的用途、權威、取證方式、涵蓋範圍——人與 agent 都從這裡開始
+├── AGENTS.md           # 給 AI agent：讀取順序、全程規則、權威劃分、錨點、回寫格式
+├── CLAUDE.md           # @AGENTS.md
+├── handoff-notes.md    # 交接說明：US 對照與優先序、驗收條件原文、已定案決策、補問清單（PM 已答）、截圖索引
+├── storyboard.md
+├── prototype/{index.html, export.json, screens/}
+└── reference/          # brief、一致性檢核、回饋（參考）
 ```
 
-開發者把 `.specify/context/` 複製進開發 repo、commit，依 `SDD-START.md` 啟動 sdd-harness 即可，不需要本 skill。
-開發完成後交回 `handback-to-sa.md`，SA 以步驟 6 升版。做 mockup 與做開發可以是不同人。
+開發者把整個目錄放進開發 repo（位置不限）並 commit，在 repo 根的 AGENTS.md／CLAUDE.md 加一行指向它，
+用什麼開發流程都行，不需要本 skill。用 sdd-harness 時的放法與各階段規則在 sdd-harness 的
+`references/source-package.md`。開發完成後交回 `handback-to-sa.md`，SA 以步驟 6 升版。做 mockup 與做開發可以是不同人。
 
 ## 設計決策
 

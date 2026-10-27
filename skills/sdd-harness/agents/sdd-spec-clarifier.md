@@ -46,7 +46,7 @@ effort: high
         版本目錄（如 `.specify/context/<slug>/v<N>/`）有 `index.md` 就讀它，依其
         「取證方式」「涵蓋」兩欄決定每個檔怎麼開、開哪一段。
      2. 審查對象的每條 User Story／FR／AC 應帶來源錨點（`[SB US-nn 規則 k]`、`[P S<n>]`、
-        `[EXT 簡稱 §節]`、`[SRC 簡稱 p.頁]`…，慣例見 `.specify/context/_shared/spec-source-template.md`
+        `[EXT 簡稱 §節]`、`[SRC 簡稱 p.頁]`…，慣例見 `~/.claude/skills/sdd-harness/references/spec-source-template.md`
         「錨點慣例（原文）」）。本輪要比對的來源片段＝這些錨點指到的 US／規則／畫面／頁／節
         的集合；**只開這些片段**。
      3. 沒有 `index.md`、或某 story 的條目沒有錨點時，**不要**退回掃目錄或 grep 全文找
@@ -57,7 +57,7 @@ effort: high
      - 檢查 9 不過（範圍對照的 US-nn／S<n> 沒被任何條目引用）→ HIGH（需求漏寫，或範圍對照錯）。
      - 來源版本目錄沒有 `index.md` → HIGH（specify 的完成準則要求它；格式見 sdd-harness
        SKILL.md 步驟 3）。
-     - 無交接包的專案沒有完整規格來源段時，以 SKILL.md 步驟 3 的最小規格來源段（來源表＋
+     - 無來源包的專案沒有完整規格來源段時，以 SKILL.md 步驟 3 的最小規格來源段（來源表＋
        範圍對照）做同樣的 8、9 檢查。
    - **範圍絆線**（每個 story 各算；開任何片段之前先算）。觸發條件二擇一：
      (a) 該 story 任一錨點指向整份檔案，或在 `index.md` 涵蓋欄解析不到；

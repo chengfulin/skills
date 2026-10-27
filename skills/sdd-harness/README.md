@@ -98,6 +98,8 @@ sdd-harness/
 │   ├── implement-loop.md          # 步驟 8 實作迴圈全文（索引準備、逐 phase 閘門、越界放行、story 收尾 checklist）
 │   ├── replan.md                  # 重規劃閘門（實作中發現規劃不可行時的 roll-forward 程序）
 │   ├── review-gate.md             # 人為 review 閘門：導覽簡報的產製／發布／提問程序與觸發點表
+│   ├── source-package.md          # 來源包模式：以需求交接包（含 AGENTS.md、index.md）為規格來源時的放法與各階段規則
+│   ├── spec-source-template.md    # spec.md「規格來源」段範本：權威劃分、錨點慣例、機械檢查 1～9
 │   └── brief-storyboard-kit.html  # 導覽簡報的故事板套件（色票、symbol 圖庫、概念圖／流程圖格子骨架）
 └── scripts/
     ├── install.sh                 # 冪等安裝（symlink skill、agents、sdd-baseline 到 ~/.claude/）
