@@ -3,8 +3,9 @@
 > 用途：feature 以 StoryBoard 與 Prototype 為依據時，放在 spec.md 開頭（`**Input**` 之後、`## Clarifications` 之前），為必填段落。
 > 來源：歸納多個以 StoryBoard 與設計稿為依據的 feature 實務：來源表與 StoryBoard 優先、第三方權威與部署後目視重做、版面依設計稿與偏離分類。
 > `<!-- -->` 為填寫指引，產出 spec 時刪除；`<!-- spec-source:begin -->`／`end` 錨點保留，供機械檢查定位。
-> 本檔由 make-mockup-harness 步驟 7 的 `pack-sdd-handoff.sh` 複製到開發 repo 的 `.specify/context/_shared/`。
-> 範例中的 sha256 僅為示意，實際交接時須以複製到 `.specify/context/` 的檔案重新計算。
+> 本檔屬 sdd-harness，不隨來源包分發：specify 階段把「規格來源」段複製進 spec.md，機械檢查 7 比對本檔的權威劃分原文。
+> 來源是需求交接包（來源包）時的各階段規則見同目錄 `source-package.md`。
+> 範例中的 sha256 僅為示意，實際須以 `.specify/context/` 內的檔案重新計算。
 
 ---
 
@@ -87,14 +88,9 @@
 
 ### 錨點慣例
 
-見 `.specify/context/_shared/spec-source-template.md`「錨點慣例（原文）」；本 spec 的錨點依該表，由機械檢查 8、9 守。
+見 `~/.claude/skills/sdd-harness/references/spec-source-template.md`「錨點慣例（原文）」；本 spec 的錨點依該表，由機械檢查 8、9 守。
 
 ### 來源缺口
-| :---- | :---- | :---- |
-| `[SB US-nn]`、`[SB US-nn 規則 k]`、`[SB US-nn 狀態]`、`[SB US-nn 邊界 k]`、`[SB 全域規則 k]`、`[SB 資料關聯 k]` | StoryBoard 的 User Story／該 US「規則」清單第 k 條／其「狀態」項／「邊界情況」第 k 條／「全域規則」第 k 條／「資料關聯性」第 k 列 | `[SB US-02 規則 3]` |
-| `[P S<n>]`、`[P S<n>-<序號>]` | Prototype 畫面（範圍對照的 S<n>）／`screens/` 中檔名 `S<n>-<序號>-*.png` 的那張截圖 | `[P S1-03]` |
-| `[EXT <簡稱> §<節>｜p.<頁>]` | 來源表「外部權威」列的文件，只到節或頁 | `[EXT 法規 §12]` |
-| `[IN Q<n>]`、`[IN AC-<id>]` | 同目錄 `sdd-input.md` 的補問清單答案／驗收條件原文（含 `AC-P` 系列） | `[IN AC-P1]` |
 
 <!-- 來源未定義、由 spec 補上的項目。每條必須是已決處置並指向 FR；
      尚未決定的寫 [NEEDS CLARIFICATION: …]，clarify 後不得殘留。無則寫「無」。 -->
@@ -114,7 +110,7 @@
 
 - 類別：**元件限制**（共用元件做不到）、**來源缺漏**（來源未畫出該狀態）、**來源矛盾**（來源自身或彼此衝突）、
   **業務決策**（clarify 改變了 StoryBoard 規則）。
-- 「回寫來源」為「是」者，由 sdd-harness 完成報告彙整，交 make-mockup-harness 升版 StoryBoard 與 Prototype。
+- 「回寫來源」為「是」者，由 sdd-harness 完成報告彙整成 `handback-to-sa.md`（見 `source-package.md` §6），交需求端升版 StoryBoard 與 Prototype。
 
 ### 來源升版
 
@@ -132,8 +128,8 @@
 6. Clarifications 與 ui-contracts 引用的 D-ID 都存在於偏離登記。
 7. 權威劃分五條原文未被改動；與五條不同的做法都有對應的 X-ID，且每列的提出者與裁決日期非空。
 8. spec 每條 User Story、FR、AC／SC 至少一個錨點，且每個錨點只用 spec 與 `index.md` 就能解析：`SB`／`P`／`EXT`／`SRC`
-   指到的 US-nn、S<n>、§節、p.頁出現在來源目錄 `index.md` 的「涵蓋」欄（`EXT`／`SRC` 的簡稱在來源表）；`IN` 指同目錄
-   `sdd-input.md` 的 Q<n>／AC-<id>；`[G-n]`／`[D-n]` 存在於本 spec 的對應表。
+   指到的 US-nn、S<n>、§節、p.頁出現在來源目錄 `index.md` 的「涵蓋」欄（`EXT`／`SRC` 的簡稱在來源表）；`HO` 指同目錄
+   `handoff-notes.md` 的 Q<n>／AC-<id>；`[G-n]`／`[D-n]` 存在於本 spec 的對應表。
 9. 範圍對照的每個 US-nn 與 S<n> 至少被一條 User Story 或 FR 的錨點引用。
 <!-- spec-source:end -->
 
@@ -144,13 +140,14 @@
 spec 內只留指標，本節是唯一版本。spec 每條 User Story、FR、驗收情境（AC／SC）句尾至少一個錨點，可多個；
 沒有上游依據的標 `[G-n]` 或 `[D-n]`。錨點是 clarifier 的讀取範圍：比對某 story 時只開其錨點指到的片段，
 所以要寫到能定位片段的粒度（US、規則、畫面、頁、節），不引整份檔案；錨點必須能在來源目錄 `index.md` 的「涵蓋」欄找到。
+`SB`／`P`／`HO` 三列與來源包 `AGENTS.md`「錨點」相同。
 
 | 錨點 | 指向 | 例 |
 | :---- | :---- | :---- |
 | `[SB US-nn]`、`[SB US-nn 規則 k]`、`[SB US-nn 狀態]`、`[SB US-nn 邊界 k]`、`[SB 全域規則 k]`、`[SB 資料關聯 k]` | StoryBoard 的 User Story／該 US「規則」清單第 k 條／其「狀態」項／「邊界情況」第 k 條／「全域規則」第 k 條／「資料關聯性」第 k 列 | `[SB US-02 規則 3]` |
 | `[P S<n>]`、`[P S<n>-<序號>]` | Prototype 畫面（範圍對照的 S<n>）／`screens/` 中檔名 `S<n>-<序號>-*.png` 的那張截圖 | `[P S1-03]` |
 | `[EXT <簡稱> §<節>｜p.<頁>]` | 來源表「外部權威」列的文件，只到節或頁；簡稱登記在來源表「來源」欄 | `[EXT 法規 §12]` |
-| `[IN Q<n>]`、`[IN AC-<id>]` | 同目錄 `sdd-input.md` 的補問清單答案／驗收條件原文（含 `AC-P` 系列） | `[IN AC-P1]` |
+| `[HO Q<n>]`、`[HO AC-<id>]` | 同目錄 `handoff-notes.md` 的補問清單答案／驗收條件原文（含 `AC-P` 系列） | `[HO AC-P1]` |
 | `[G-n]`、`[D-n]` | 本 spec 的來源缺口／偏離登記第 n 筆（spec 自身，不是上游；clarify 改變規則的也是 D-ID） | `[G-1]` |
 | `[SRC <簡稱> §<節>｜p.<頁>]` | 沒有 StoryBoard、只有自由格式需求文件時用 | `[SRC PRD §3.2]` |
 
@@ -177,7 +174,7 @@ FR 寫法示例：「FR-003 列表依到期日升冪，同日依帳號名稱 `[S
 
 | 產物 | 產生自 | 路徑 |
 | :---- | :---- | :---- |
-| 畫面截圖 | Prototype v2 | N/A（make-mockup-harness 交接步驟尚未產出） |
+| 畫面截圖 | Prototype v2 | N/A（來源包尚未附截圖） |
 | design token 清單 | Prototype v2 | `research.md`「設計 token」節（plan 階段產出） |
 
 **參考資料**：無。
@@ -207,7 +204,7 @@ FR 寫法示例：「FR-003 列表依到期日升冪，同日依帳號名稱 `[S
 
 ### 錨點慣例
 
-見 `.specify/context/_shared/spec-source-template.md`「錨點慣例（原文）」；本 spec 的錨點依該表，由機械檢查 8、9 守。
+見 `~/.claude/skills/sdd-harness/references/spec-source-template.md`「錨點慣例（原文）」；本 spec 的錨點依該表，由機械檢查 8、9 守。
 
 ### 來源缺口
 

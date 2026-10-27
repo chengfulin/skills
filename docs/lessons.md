@@ -115,5 +115,5 @@
   symbol→edge 的索引才有有界查詢，規格要有 FR→錨點的邊才有有界比對。
 - 狀態：已升格 → `skills/sdd-harness/agents/sdd-spec-clarifier.md`#審查程序 5、
   `skills/sdd-harness/SKILL.md`#步驟 3、
-  `skills/make-mockup-harness/references/sdd-handoff-templates/spec-source-template.md`#錨點慣例、
-  `skills/make-mockup-harness/scripts/pack-sdd-handoff.sh`（產 `index.md`）
+  `skills/sdd-harness/references/spec-source-template.md`#錨點慣例、
+  `skills/make-mockup-harness/scripts/pack-handoff.sh`（產 `index.md`）

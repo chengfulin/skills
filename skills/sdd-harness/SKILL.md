@@ -21,9 +21,11 @@ speckit-implement 派 `sdd-implementer`，見步驟 8），而**釐清、影響�
   使用者在 prompt 指定自訂憲章（檔案、目錄或貼上內容）時以其為準。細節在
   constitution-assembly.md。
 - 上游需求資料：目標專案的 `.specify/context/`（PM 文件、StoryBoard、設計稿／Prototype、
-  外部權威；make-mockup-harness 的交接包也放在這裡）。每個來源版本目錄以 `index.md`
-  為索引、spec 以錨點指回來源（步驟 3）；`sdd-spec-clarifier` 在步驟 4、7 依索引與錨點
-  取片段逐例比對（見其定義檔「上游資料一致性」）。目錄不存在時照常進行。
+  外部權威）。每個來源版本目錄以 `index.md` 為索引、spec 以錨點指回來源（步驟 3）。
+  版本目錄根有 `AGENTS.md` 與 `index.md` 的是**來源包**（需求交接包，如 make-mockup-harness
+  產出）：步驟 3 起 Read `$SKILL_DIR/references/source-package.md`，各階段照其對應節補充執行。
+  `sdd-spec-clarifier` 在步驟 4、7 依索引與錨點取片段逐例比對（見其定義檔「上游資料一致性」）。
+  目錄不存在時照常進行。
 - 參考文件**按需讀取，不要一次全讀**（token 紀律）：
   - `$SKILL_DIR/references/workflow-stages.md`：完成準則、狀態檔 schema、續跑演算法
     ——步驟 0b 與每階段收尾時讀對應小節
@@ -227,13 +229,13 @@ speckit-constitution → 寫 README「SDD 導入宣告」與 `sdd-adoption.json`
    - 每批來源須有 `index.md`——每檔一列：路徑、媒材、大小、權威、取證方式（Read 全文／
      只讀某節／看截圖／PDF 只看某幾頁／不整份 Read）、涵蓋（列到 US-nn、S<n>、§節、
      p.頁的粒度，錨點要能在這欄找到）。位置：來源版本目錄（`<slug>/v<N>/`）內；來源不是
-     這種結構時放該批來源的最上層目錄。make-mockup-harness 交接包已附；沒有的（PM 直接
+     這種結構時放該批來源的最上層目錄。來源包已附；沒有的（PM 直接
      給 PDF、試算表、設計稿）派搜尋型 subagent 產草稿（只看檔名、標題、目錄頁與分頁
      標題，不通讀內容），你核對後隨本步驟 commit。索引是衍生物，不是來源：在已入版控的
      來源目錄**新增** `index.md` 不算違反來源唯讀，修改來源檔才算。
    - spec 的每條 User Story、FR、驗收情境句尾標來源錨點，寫到能定位片段的粒度
-     （US、規則、畫面、頁、節），不引整份檔案。有交接包：慣例與機械檢查 8、9 在
-     `.specify/context/_shared/spec-source-template.md`。沒有交接包：你在 spec 開頭自建
+     （US、規則、畫面、頁、節），不引整份檔案。有來源包：慣例與機械檢查 8、9 在
+     `$SKILL_DIR/references/spec-source-template.md`。沒有來源包：你在 spec 開頭自建
      最小「規格來源」段——來源表（簡稱、路徑、權威範圍）＋範圍對照（每個 User Story
      對應的來源 §節／p.頁）；錨點用 `[SRC <簡稱> §<節>｜p.<頁>]`，spec 自行補上的用
      `[G-n]`（來源缺口表）；檢查 8＝每條目至少一個錨點且能在 `index.md` 涵蓋欄找到，
