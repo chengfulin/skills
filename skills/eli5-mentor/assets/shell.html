@@ -1,0 +1,90 @@
+<title>{{TITLE}}</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  :root {
+    --bg: #faf8f4; --surface: #ffffff; --fg: #1f2328; --muted: #5f6b76; --line: #dcd6cc;
+    --accent: #2f6fb3; --accent-2: #d9822b; --warn: #c2413b;
+    --radius: 14px; --maxw: 880px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171a; --surface: #1d2025; --fg: #e8e6e3; --muted: #9aa4ae; --line: #343a42;
+      --accent: #6ea8e6; --accent-2: #f0a35a; --warn: #ef7b74; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a; --surface: #1d2025; --fg: #e8e6e3; --muted: #9aa4ae; --line: #343a42;
+    --accent: #6ea8e6; --accent-2: #f0a35a; --warn: #ef7b74; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.75 system-ui, -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+  }
+  .wrap {
+    max-width: var(--maxw); margin: 0 auto; padding-block: 0 80px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  header.hero { padding: 48px 0 24px; }
+  header.hero h1 { text-wrap: balance; margin: 0 0 8px; font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.2; }
+  header.hero p { margin: 0; color: var(--muted); }
+  .depth { display: flex; align-items: center; gap: 10px; margin-top: 20px; font-size: .9rem; color: var(--muted); }
+  .depth .bar { flex: 1; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+  nav.toc { margin: 24px 0 8px; padding: 16px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  nav.toc h2 { margin: 0 0 8px; font-size: 1rem; }
+  nav.toc ol { margin: 0; padding-left: 1.4em; }
+  nav.toc .grp { margin: 8px 0 4px; font-weight: 600; color: var(--muted); font-size: .9rem; }
+  nav.toc a { color: var(--fg); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); }
+  .part-banner { margin: 56px 0 16px; padding-left: 14px; border-left: 6px solid var(--accent-2); }
+  .part-banner.deep { border-left-color: var(--accent); }
+  .part-banner small { color: var(--muted); letter-spacing: .08em; }
+  .part-banner h2 { margin: 2px 0 0; font-size: 1.6rem; }
+  .chapter { margin: 24px 0; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .chapter h2 { margin-top: 0; font-size: 1.3rem; }
+  .chapter svg { display: block; width: 100%; height: auto; margin: 12px 0; }
+  details { margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 8px; }
+  summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  code { background: color-mix(in srgb, var(--accent) 12%, transparent); padding: 0 4px; border-radius: 4px; }
+  pre { overflow-x: auto; background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--line); }
+  table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  #part-eli5 .chapter { font-size: 1.1rem; }
+  footer { margin-top: 48px; color: var(--muted); font-size: .85rem; text-align: center; }
+</style>
+<div class="wrap">
+  <header class="hero">
+    <h1>{{TITLE}}</h1>
+    <p>{{SUBTITLE}}</p>
+    <div class="depth"><span>先有畫面</span><span class="bar"></span><span>再看細節</span></div>
+  </header>
+
+  <nav class="toc" aria-label="目錄"><h2>目錄</h2><div id="toc"></div></nav>
+
+  <div class="part-banner"><small>PART 1 · ELI5</small><h2>先有畫面</h2></div>
+  {{PART_ELI5}}
+
+  <div class="part-banner deep"><small>PART 2 · MENTOR</small><h2>再看細節</h2></div>
+  {{PART_MENTOR}}
+
+  <footer>第一部建立直覺，第二部把直覺接回真實名詞與實作。</footer>
+</div>
+<script>
+  (function () {
+    var toc = document.getElementById('toc');
+    [['part-eli5', '第一部 · 先有畫面'], ['part-mentor', '第二部 · 再看細節']].forEach(function (p) {
+      var part = document.getElementById(p[0]);
+      if (!part) return;
+      var grp = document.createElement('div'); grp.className = 'grp'; grp.textContent = p[1];
+      var ol = document.createElement('ol');
+      part.querySelectorAll('.chapter').forEach(function (ch, i) {
+        var h = ch.querySelector('h2'); if (!h) return;
+        if (!ch.id) ch.id = p[0] + '-' + (i + 1);
+        var li = document.createElement('li'), a = document.createElement('a');
+        a.href = '#' + ch.id; a.textContent = h.textContent; li.appendChild(a); ol.appendChild(li);
+      });
+      toc.appendChild(grp); toc.appendChild(ol);
+    });
+  })();
+</script>
