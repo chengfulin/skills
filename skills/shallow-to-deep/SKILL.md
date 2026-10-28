@@ -18,12 +18,13 @@ argument-hint: <主題，或 repo／目錄路徑＋想了解的面向>
 - 每章一個 `<article class="chapter" id="<唯一 id>">`，章名用 `<h2>`。目錄由 shell 依 `h2` 自動產生成 `<ol>`，章名**不自帶編號**（「1. 」「一、」之類），否則目錄會編兩次。
 - 片段內所有 `id`（章節、SVG 的 `marker`／`symbol`／`gradient`／`clipPath` 等）一律加前綴：第一部 `e-`、第二部 `m-`（例：`e-flow`、`m-arr`）。兩部並行撰寫，不加前綴容易撞名。
 - 每張 SVG 自帶它用到的 `<defs>`；`href="#…"`／`url(#…)` 只引用同一張 SVG 內的 id，不跨 SVG 共用。id 仍須全頁唯一，所以 defs 的 id 帶上章節名（例：`e-flow-arr`、`m-story-arr`）。
-- 配色只用 shell 的 CSS 變數（`--bg` `--surface` `--fg` `--muted` `--line` `--accent` `--accent-2` `--warn`），SVG 的 `fill`／`stroke` 也一樣，深淺色主題才會一致。可用的值只有 `var(--…)`、`none`、`currentColor`；不寫 hex、`rgb()`／`hsl()`、具名顏色（`white`、`black`、`gray`…）。需要額外樣式時，放在片段內的 `<style>`，選擇器一律以 `#part-eli5` 或 `#part-mentor` 開頭。
+- 配色只用 shell 的 CSS 變數（`--bg` `--surface` `--fg` `--muted` `--line` `--accent` `--accent-2` `--warn`，以及色塊專用的 `--accent-fill` `--accent-2-fill` `--warn-fill`），SVG 的 `fill`／`stroke` 也一樣，深淺色主題才會一致。可用的值只有 `var(--…)`、`none`、`currentColor`；不寫 hex、`rgb()`／`hsl()`、具名顏色（`white`、`black`、`gray`…）。需要額外樣式時，放在片段內的 `<style>`，選擇器一律以 `#part-eli5` 或 `#part-mentor` 開頭。
 - shell 的色值已調到深淺色主題都符合對比度門檻，照下列用法就不會出問題：
-  - 文字與表達圖意的形狀、線條用 `--fg` `--muted` `--accent` `--accent-2` `--warn`。
+  - 文字與表達圖意的形狀、線條用 `--fg` `--muted` `--accent` `--accent-2` `--warn`。圖內文字以 `--fg` 為主，深淺色主題都是同一個 token。
   - `--line` 只用在裝飾線、分隔線與次要框線；表達圖意的線（牆、時間軸、流程箭頭）改用 `--muted` 或彩色 token。
-  - 色塊上的文字用 `--bg` 或 `--surface`。兩個彩色 token 不直接疊放，有意義的相鄰色塊用 `--surface` 描邊或留白隔開。
+  - 放文字的色塊用 `--accent-fill`／`--accent-2-fill`／`--warn-fill`（淺色主題是淡色底、深色主題是深色底，shell 已調到與 `--fg` 的對比達 4.5:1），上面的字一律 `--fg`，不用 `--muted` 或彩色 token。`--accent`／`--accent-2`／`--warn` 留給線條、描邊、圖示、彩色文字與不放文字的小色塊；放了文字就要改用對應的 `*-fill`。反白色塊（`--fg`／`--muted` 當底）上的字才用 `--bg`／`--surface`。兩個彩色 token 不直接疊放，有意義的相鄰色塊用 `--surface` 描邊或留白隔開。
   - 文字與必要圖形不加 `opacity`／`fill-opacity`。
+  - 片段 `<style>` 不得以元素選擇器對 SVG 元素設 `fill`／`stroke`（例：`#part-mentor svg text { fill: var(--fg) }`）：CSS 規則優先於元素上的 `fill="…"` 屬性，會把色塊上的字一併蓋成前景色。要給預設字色只能寫 `svg text:not([fill])`。每個 `<text>` 都要有有效的 fill（屬性、class 或上述預設），否則瀏覽器預設黑色，深色主題看不見。
 - SVG 一律用 `viewBox`，不在屬性寫死像素寬度。內容圖加 `width="100%"` 隨欄寬縮放；固定尺寸的小圖示（如角色卡圖示）改由片段 `<style>` 的 CSS 控制大小，不必加 `width="100%"`。不載入外部資源。
 - SVG 文字要放得進它所在的色塊：粗估寬度＝中日韓字每字 1em、英數每字 0.55em（em 取該文字的 font-size），不得超出包住它的 `<rect>` 或 viewBox。長標籤改短、拆兩行，或把色塊加寬。
 
@@ -90,12 +91,13 @@ subagent 只看得到 brief，因此每份 brief 都要寫明 `<dir>` 的絕對�
    - 沒有寫死的顏色（hex、`rgb(`、`hsl(`、具名顏色）；沒有 `opacity`。
    - 每個 `<svg>` 有 `viewBox`，屬性沒有像素寬度。
    - 每個 `href="#…"`／`url(#…)` 指到的 id 存在於同一個 `<svg>` 內。
-   - 片段 `<style>` 的選擇器都以 `#part-eli5` 或 `#part-mentor` 開頭。
+   - 片段 `<style>` 的選擇器都以 `#part-eli5` 或 `#part-mentor` 開頭；沒有以元素選擇器覆寫 SVG 的 `fill`／`stroke`（只允許 `:not([fill])`／`:not([stroke])` 當預設值）。
+   - 每個 SVG `<text>` 都有有效 fill，且與包住它的 `<rect>` 配對：`*-fill` 色塊上的字只能是 `--fg`；`--accent`／`--accent-2`／`--warn` 色塊裡不得有文字（要改用 `*-fill`）；`--fg`／`--muted` 反白色塊上的字只能是 `--bg`／`--surface`；`--bg`／`--surface`／`--line`／`none` 底上的字不能是 `--bg`／`--surface`。
    - 每個 SVG `<text>` 的粗估寬度（中日韓字 1em、英數 0.55em）不超出包住它的 `<rect>` 或 viewBox（容忍 4px；旋轉、多行與 transform 群組外的對照不估）。
 
    另用 grep 確認：對照表的每一列在第二部都找得到對應章節。
 
-   格式類問題（寫死顏色、id 重複或缺前綴、選擇器前綴、跨 SVG 引用、章名編號、文字溢出）主對話直接修片段後重新合併，直到 PASS；內容缺漏（對照表某列在第二部沒有對應）以 SendMessage 請 Mentor subagent 補寫，再重新合併。
+   格式類問題（寫死顏色、id 重複或缺前綴、選擇器前綴、style 覆寫 fill、色塊文字對比、跨 SVG 引用、章名編號、文字溢出）主對話直接修片段後重新合併，直到 PASS；內容缺漏（對照表某列在第二部沒有對應）以 SendMessage 請 Mentor subagent 補寫，再重新合併。
 4. **派內容驗證 subagent。** 唯讀，不修改任何檔案。brief 附上 `<dir>/index.html`、`notes.md` 的絕對路徑、原始來源位置（repo 路徑，或技術主題的權威來源），並寫明兩部的定位（第一部允許簡化，但不得說錯；第二部要精確）。工作：
    - 逐條驗證兩部的事實敘述：流程順序、角色職責與權限、數字與上限、觸發條件、因果關係。圖裡的文字、標籤、箭頭方向與先後順序也算敘述。
    - 回到**原始來源**核對，不只比對 `notes.md`（notes 本身也可能有誤）。repo 主題讀出處檔案本身；技術主題查官方文件或權威來源，涉及版本的敘述要確認版本。

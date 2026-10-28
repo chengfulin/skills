@@ -20,23 +20,65 @@ ASCII_EM = 0.55          # 英數與標點平均約 0.55em
 OVERFLOW_TOLERANCE = 4   # 估算誤差容忍（px，以 viewBox 單位計）
 
 
+SVG_SHAPES = r'\b(svg|text|tspan|rect|path|circle|ellipse|line|polyline|polygon|g|marker)\b'
+FILL_TOKENS = ('--accent-fill', '--accent-2-fill', '--warn-fill')   # 放文字的色塊：上面的字只用 --fg
+COLOR_TOKENS = ('--accent', '--accent-2', '--warn')                  # 彩色 token：線、描邊、圖示、彩色文字；放了文字就要改用 *-fill
+INVERT_TOKENS = ('--fg', '--muted')                                  # 反白色塊：上面的字用 --bg／--surface
+LIGHT_FILL_TOKENS = ('--bg', '--surface', '--line', 'none')          # 底色：上面的字不能用 --bg／--surface
+
+
 def style_map(style_css):
-    """從片段 <style> 取 SVG 文字的預設字級、class → 字級、class → text-anchor。"""
+    """從片段 <style> 取 SVG 文字的預設字級／預設 fill、class → 字級／text-anchor／fill。"""
     default = None
-    sizes, anchors = {}, {}
+    default_fill = None
+    sizes, anchors, fills = {}, {}, {}
     for sel, body in re.findall(r'([^{}]+)\{([^{}]*)\}', style_css):
         m_size = re.search(r'font-size\s*:\s*([\d.]+)px', body)
         m_anchor = re.search(r'text-anchor\s*:\s*(\w+)', body)
+        m_fill = re.search(r'(?<![\w-])fill\s*:\s*([^;]+)', body)
         for one in sel.split(','):
             one = one.strip()
-            if m_size and (re.search(r'\bsvg\s+text\s*$', one) or re.search(r'\bsvg\s*$', one)):
+            is_text_default = re.search(r'\bsvg\s+text(:not\(\[fill\]\))?\s*$', one) or re.search(r'\bsvg\s*$', one)
+            if m_size and is_text_default:
                 default = float(m_size.group(1))
+            if m_fill and is_text_default:
+                default_fill = m_fill.group(1).strip()
             for cls in re.findall(r'\.([\w-]+)', one):
                 if m_size:
                     sizes[cls] = float(m_size.group(1))
                 if m_anchor:
                     anchors[cls] = m_anchor.group(1)
-    return default, sizes, anchors
+                if m_fill:
+                    fills[cls] = m_fill.group(1).strip()
+    return default, sizes, anchors, default_fill, fills
+
+
+def check_style_overrides(style_css, path):
+    """片段 <style> 以元素選擇器對 SVG 元素設 fill／stroke，會蓋掉元素上的 fill="…"／stroke="…"（CSS 優先於呈現屬性）。
+    只允許加 :not([fill])／:not([stroke]) 當預設值；class 選擇器不在此限（作者是刻意套用）。"""
+    problems = []
+    for sel, body in re.findall(r'([^{}]+)\{([^{}]*)\}', style_css):
+        for prop in ('fill', 'stroke'):
+            if not re.search(rf'(?<![\w-]){prop}\s*:', body):
+                continue
+            for one in sel.split(','):
+                one = one.strip()
+                if not one or '.' in one.split()[-1]:
+                    continue  # 最末段是 class 選擇器：刻意套用，不算覆寫
+                if re.search(SVG_SHAPES, one) and f':not([{prop}])' not in one:
+                    problems.append(f'{path}: <style> 以「{one}」設 {prop}，會蓋掉元素上的 {prop}="…"；改成 {one}:not([{prop}]) 只當預設值')
+    return problems
+
+
+def token_of(value):
+    """把 fill 值正規化成 token 名（'--accent'）或 'none'／None。"""
+    if value is None:
+        return None
+    value = value.strip()
+    if value == 'none':
+        return 'none'
+    m = re.match(r'var\((--[\w-]+)\)', value)
+    return m.group(1) if m else value
 
 
 def text_width(txt, px):
@@ -69,8 +111,9 @@ def scope_of(pos, scopes):
     return -1
 
 
-def check_text_overflow(svg, idx, path, default_px, class_px, class_anchor):
-    """估每個 <text> 的寬度，對照同一座標範圍內包住它的 <rect>，或 viewBox。"""
+def check_text_overflow(svg, idx, path, default_px, class_px, class_anchor, default_fill=None, class_fill=None):
+    """估每個 <text> 的寬度，對照同一座標範圍內包住它的 <rect>，或 viewBox；並檢查文字與所在色塊的 token 配對。"""
+    class_fill = class_fill or {}
     problems = []
     head = re.match(r'<svg\b[^>]*>', svg).group(0)
     vb = re.search(r'viewBox="\s*([\d.-]+)\s+([\d.-]+)\s+([\d.]+)\s+([\d.]+)', head)
@@ -82,8 +125,9 @@ def check_text_overflow(svg, idx, path, default_px, class_px, class_anchor):
         if 'transform' in a:
             continue
         try:
+            m_sf = re.search(r'fill\s*:\s*([^;"]+)', a.get('style', ''))
             rects.append((scope_of(r.start(), scopes), float(a.get('x', 0)), float(a.get('y', 0)),
-                          float(a['width']), float(a['height'])))
+                          float(a['width']), float(a['height']), token_of(m_sf.group(1) if m_sf else a.get('fill'))))
         except (KeyError, ValueError):
             continue
     for t in re.finditer(r'<text\b([^>]*)>(.*?)</text>', svg, flags=re.S):
@@ -114,10 +158,10 @@ def check_text_overflow(svg, idx, path, default_px, class_px, class_anchor):
             left, right = x, x + w
         scope = scope_of(t.start(), scopes)
         box = None
-        for sc, rx, ry, rw, rh in rects:
+        for sc, rx, ry, rw, rh, rfill in rects:
             if sc == scope and rx <= x <= rx + rw and ry <= y <= ry + rh + 1 and y - px * 0.8 >= ry - 1:
-                if box is None or rw < box[2]:
-                    box = (rx, ry, rw, rh)
+                if box is None or rw * rh < box[2] * box[3]:
+                    box = (rx, ry, rw, rh, rfill)
         label = f'{path}: 第 {idx} 張 SVG 文字「{content[:24]}」估寬 {w:.0f}px，'
         if box:
             over = max(box[0] - left, right - (box[0] + box[2]))
@@ -127,6 +171,22 @@ def check_text_overflow(svg, idx, path, default_px, class_px, class_anchor):
             over = max(-left, right - vb_w)
             if over > OVERFLOW_TOLERANCE:
                 problems.append(label + f'超出 viewBox 寬 {vb_w:g} 約 {over:.0f}px')
+        # 文字與所在色塊的 token 配對（有效 fill 的優先序同 CSS：style= > class 規則 > fill="…" > style 的 svg text 預設）
+        m_sfill = re.search(r'style="[^"]*(?<![\w-])fill\s*:\s*([^;"]+)', t.group(1))
+        fill = token_of(m_sfill.group(1) if m_sfill
+                        else next((class_fill[c] for c in classes if c in class_fill), None)
+                        or attrs.get('fill') or default_fill)
+        where = f'{path}: 第 {idx} 張 SVG 文字「{content[:24]}」'
+        if fill is None:
+            problems.append(where + '未指定 fill（瀏覽器預設黑色，深色主題看不見）；加 fill="var(--fg)" 或在 <style> 設 svg text:not([fill]) 的預設')
+        elif box and box[4] in FILL_TOKENS and fill != '--fg':
+            problems.append(where + f'fill={fill} 放在 {box[4]} 色塊上；色塊上的字只用 var(--fg)')
+        elif box and box[4] in COLOR_TOKENS:
+            problems.append(where + f'放在 {box[4]} 色塊上；有文字的色塊改用 var({box[4]}-fill)，字用 var(--fg)')
+        elif box and box[4] in INVERT_TOKENS and fill not in ('--bg', '--surface'):
+            problems.append(where + f'fill={fill} 放在 {box[4]} 反白色塊上，對比不足；字用 var(--bg) 或 var(--surface)')
+        elif box and box[4] in LIGHT_FILL_TOKENS and fill in ('--bg', '--surface'):
+            problems.append(where + f'fill={fill} 放在 {box[4]} 底上，看不見；改用 var(--fg)／var(--muted) 或彩色 token')
     return problems
 
 
@@ -181,7 +241,8 @@ def check_fragment(path, all_ids):
             one = one.strip()
             if one and not one.startswith('#' + part_id) and not one.startswith('@'):
                 problems.append(f'{path}: 選擇器未以 #{part_id} 開頭：{one}')
-    default_px, class_px, class_anchor = style_map(style_css)
+    default_px, class_px, class_anchor, default_fill, class_fill = style_map(style_css)
+    problems += check_style_overrides(style_css, path)
 
     # 每張 SVG：viewBox、像素寬度、同圖引用、文字寬度
     svgs = re.findall(r'<svg\b[^>]*>.*?</svg>', s, flags=re.S)
@@ -195,7 +256,7 @@ def check_fragment(path, all_ids):
         for ref in re.findall(r'(?:href="#|url\(#)([^")]+)', svg):
             if ref not in local:
                 problems.append(f'{path}: 第 {k} 張 SVG 引用 #{ref} 不在同一張 SVG 內')
-        problems += check_text_overflow(svg, k, path, default_px, class_px, class_anchor)
+        problems += check_text_overflow(svg, k, path, default_px, class_px, class_anchor, default_fill, class_fill)
 
     print(f'{path}: {len(arts)} 章、{len(svgs)} 張 SVG、{len(ids)} 個 id、{s.count(chr(10)) + 1} 行')
     return problems
