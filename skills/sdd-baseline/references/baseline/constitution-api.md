@@ -1,6 +1,6 @@
 # SDD 憲章：API 服務延伸（API）
 
-> 版本：5.5.0｜本文件為 [`constitution.md`](constitution.md) 之延伸，**須與核心原則（CP）、治理（GV）一併適用**。
+> 版本：5.6.0｜本文件為 [`constitution.md`](constitution.md) 之延伸，**須與核心原則（CP）、治理（GV）一併適用**。
 > RFC 2119 用語定義見核心文件。條款前綴為 `§API-`。
 
 > **邊界聲明**：本檔只規範 API 服務的**對外應用面**（HTTP REST / WebSocket 的設計與行為）。**跨服務治理**（內部 gRPC / MQ / 事件契約、相容性、追蹤、韌性、資料邊界）見 [`constitution-microservice.md`](constitution-microservice.md)（SVC）；**部署與基礎設施**（容器、Compose、TLS、反向代理、CORS 落點）見 [`constitution-deployment.md`](constitution-deployment.md)（DEP）。

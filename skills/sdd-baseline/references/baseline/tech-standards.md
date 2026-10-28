@@ -1,6 +1,6 @@
 # 團隊技術標準建議（Tech Standards）
 
-> 版本：1.3.1｜性質：**建議參考**，非強制憲章。
+> 版本：1.3.2｜性質：**建議參考**，非強制憲章。
 >
 > 本文件提供團隊預設的技術選型建議，協助新專案快速取得一致、可維護的技術基礎。
 > 與 [`constitution.md`](constitution.md) 等憲章不同，本文件條目為 **SHOULD（建議）**——
@@ -155,7 +155,7 @@ envsubst < /usr/share/nginx/html/json/config.json.template > /usr/share/nginx/ht
 
 ## 測試工具建議
 
-憲章 §TR-7 規範單元測試案例以 ISP 設計、§TR-2 建議以 mutation testing 驗證測試品質；下列為達成上述要求的建議工具（同為 SHOULD 建議，替代方案合規）：
+憲章 §TR-7 規範測試案例以 ISP 為優先設計方法、§TR-2 建議以 mutation testing 驗證測試品質；下列為達成上述要求的建議工具（同為 SHOULD 建議，替代方案合規）：
 
 | 目的 | 建議工具 | 說明 |
 |------|---------|------|
