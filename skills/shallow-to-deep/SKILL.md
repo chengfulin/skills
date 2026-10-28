@@ -1,18 +1,18 @@
 ---
-name: eli5-mentor
-description: 由淺入深的圖解指引：同一主題先用 eli5 產出白話大圖版，再用 tech-mentor 產出工程師分層教學版，合併成一份 HTML artifact。當使用者要「由淺入深」了解一個 repo、一項新技術、一段完整流程或架構時使用。
+name: shallow-to-deep
+description: 由淺入深的圖解指引：同一主題先產出白話大圖版（ELI5），再產出工程師分層教學版（tech mentor），合併成一份 HTML artifact。當使用者要「由淺入深」了解一個 repo、一項新技術、一段完整流程或架構時使用。
 argument-hint: <主題，或 repo／目錄路徑＋想了解的面向>
 ---
 
-# ELI5 → Mentor 圖解指引
+# 由淺入深圖解指引
 
-同一主題講兩遍：**第一部**用 `eli5` 建立直覺（大圖、極少字、生活比喻），**第二部**用 `tech-mentor` 把直覺接回真實名詞與細節（概念 → 架構 → 流程 → 實作細節／常見陷阱）。兩部合併成**一份** HTML artifact，讀者從頭讀到尾就是一條由淺入深的路。
+同一主題講兩遍：**第一部**建立直覺（大圖、極少字、生活比喻），**第二部**把直覺接回真實名詞與細節（概念 → 架構 → 流程 → 實作細節／常見陷阱）。兩部合併成**一份** HTML artifact，讀者從頭讀到尾就是一條由淺入深的路。
 
 主題：$ARGUMENTS
 
 ## 交付規則
 
-`eli5` 與 `tech-mentor` 各自要求「產出一份 HTML artifact」。在本流程中，兩者改交付**片段檔**，最後只發布一份合併後的 artifact。片段契約：
+兩部各自交付**片段檔**，最後只發布一份合併後的 artifact。片段契約：
 
 - 第一部寫成 `<section class="part" id="part-eli5">…</section>`，第二部寫成 `<section class="part" id="part-mentor">…</section>`；不含 `<html>`、`<head>`、`<body>`（shell 本身也不含，發布時由 Artifact 包上）。
 - 每章一個 `<article class="chapter" id="<唯一 id>">`，章名用 `<h2>`。目錄由 shell 依 `h2` 自動產生。
@@ -27,7 +27,16 @@ argument-hint: <主題，或 repo／目錄路徑＋想了解的面向>
   - 文字與必要圖形不加 `opacity`／`fill-opacity`，透明度會拉低對比。
 - SVG 一律用 `viewBox`，不在屬性寫死像素寬度。內容圖加 `width="100%"` 隨欄寬縮放；固定尺寸的小圖示（如角色卡圖示）改由片段 `<style>` 的 CSS 控制大小，不必加 `width="100%"`。不載入外部資源。
 
-工作目錄：scratchpad 下的 `eli5-mentor/<主題-slug>/`（下稱 `<dir>`，一律用絕對路徑交給 subagent）。
+## 兩部的寫作要求
+
+兩部的寫作要求內嵌於此，不呼叫外部 skill：上游改版（例如改產 PDF／Word、要求呼叫其他工具）不會影響本流程的產出與檢核。交付方式一律依上方片段契約，不產出、不發布 artifact。
+
+- **第一部（ELI5）**，改寫自 `eli5` plugin 1.0.0：
+  > 對一個完全不懂這個主題的人講解，用大圖、極少的字。
+- **第二部（Mentor）**，改寫自本 repo 的 `tech-mentor`：
+  > 以一位資深工程師帶 junior 工程師／intern 的角度講解這個主題，先建立觀念與架構全貌，再逐步深入實作細節。章節由淺入深引導讀者理解（概念 → 架構 → 流程 → 實作細節／常見陷阱）；每一章開頭先 2–3 句概要＋一張 inline SVG 圖（架構圖／流程圖／時序圖擇適合者），細節放在 `<details>` 可展開區塊。
+
+工作目錄：scratchpad 下的 `shallow-to-deep/<主題-slug>/`（下稱 `<dir>`，一律用絕對路徑交給 subagent）。
 
 ## 實看環境
 
@@ -52,15 +61,15 @@ argument-hint: <主題，或 repo／目錄路徑＋想了解的面向>
 | 角色 | 做什麼 | 產出 |
 | --- | --- | --- |
 | 主對話 | 蒐集事實、定比喻、派工、轉交發現、發布、回報 | `notes.md`、artifact 連結 |
-| ELI5 subagent | 呼叫 `eli5` 寫第一部 | `part-eli5.html` |
-| Mentor subagent | 呼叫 `tech-mentor` 寫第二部 | `part-mentor.html` |
+| ELI5 subagent | 依第一部寫作要求寫第一部 | `part-eli5.html` |
+| Mentor subagent | 依第二部寫作要求寫第二部 | `part-mentor.html` |
 | 內容驗證 subagent（每部一個） | 唯讀，對照原始來源驗證該部的敘述是否正確 | 內容發現表 |
 | 整合 subagent | 套 shell 合併、靜態檢核、實看深淺色與手機寬度、修格式問題 | `index.html`＋檢核結果 |
 | 對比度 review subagent | 唯讀，計算每張圖在深淺色主題下的顏色對比度 | 對比度發現表 |
 
-這樣分的理由：兩個 skill 的寫作要求各自完整進入一個乾淨的 context，不會互相稀釋；兩部共用 `notes.md` 的比喻與對照表，可以並行；片段全文不經過主對話。指引文件的價值在於內容正確，所以內容由沒參與撰寫的 subagent 回到原始來源驗證，對比度也由沒參與撰寫與合併的 subagent 審查，才不會替自己背書。
+這樣分的理由：兩部的寫作要求各自完整進入一個乾淨的 context，不會互相稀釋；兩部共用 `notes.md` 的比喻與對照表，可以並行；片段全文不經過主對話。指引文件的價值在於內容正確，所以內容由沒參與撰寫的 subagent 回到原始來源驗證，對比度也由沒參與撰寫與合併的 subagent 審查，才不會替自己背書。
 
-subagent 只看得到 brief，因此每份 brief 都要寫明 `<dir>` 的絕對路徑，以及該步驟列出的內容。撰寫兩部的 brief 另要寫明：要讀的 `notes.md`、要呼叫的 skill、**本頁「交付規則」整段原文**、產出檔路徑、「不要發布 artifact，只寫片段檔」、完成標準，以及回報格式（檔案路徑、章節清單、沒涵蓋到的項目）。需要實看的 brief（步驟 4、5）附上**本頁「實看環境」整段原文**。
+subagent 只看得到 brief，因此每份 brief 都要寫明 `<dir>` 的絕對路徑，以及該步驟列出的內容。撰寫兩部的 brief 另要寫明：要讀的 `notes.md`、**該部的寫作要求原文**（「兩部的寫作要求」中對應的那一條）、**本頁「交付規則」整段原文**、產出檔路徑、「不要發布 artifact，只寫片段檔」、完成標準，以及回報格式（檔案路徑、章節清單、沒涵蓋到的項目）。需要實看的 brief（步驟 4、5）附上**本頁「實看環境」整段原文**。
 
 環境沒有 Agent 工具時，主對話依序自己做步驟 2–5 的內容，規則不變。
 
@@ -72,12 +81,12 @@ subagent 只看得到 brief，因此每份 brief 都要寫明 `<dir>` 的絕對�
    - `notes.md` 內容：一句話定義、它解決的問題、核心元件（3–7 個）、主流程步驟、關鍵術語、常見陷阱。
    - 選**一個**貫穿全篇的生活比喻，寫成「比喻對照表」：比喻角色 → 真實名詞，每個核心元件一列。
    - 完成標準：第二部要用到的每個元件與流程步驟都在 notes 裡，每條都有出處（`path:line` 或來源網址）；每個核心元件都在對照表上。
-2. **並行派 ELI5 與 Mentor 兩個 subagent**（同一則訊息送出兩個 Agent 呼叫；兩者都需要 Skill 與 Write）。
-   - **ELI5 subagent**：以 Skill 工具呼叫 `eli5`（plugin 名稱可能是 `eli5:eli5`），主題帶入，照它的要求寫內容，依片段契約寫到 `<dir>/part-eli5.html`。若環境沒有 `eli5`，照它的原始要求寫：*Explain like I'm someone who knows nothing about this topic, with big pictures and few words.*
+2. **並行派 ELI5 與 Mentor 兩個 subagent**（同一則訊息送出兩個 Agent 呼叫；兩者都需要 Write）。
+   - **ELI5 subagent**：主題帶入，照第一部寫作要求寫內容，依片段契約寫到 `<dir>/part-eli5.html`。
      - 全篇只用 notes 定好的比喻，不另起比喻。
      - 最後一章是「比喻對照表」，照 notes 的表畫出來。這張表就是通往第二部的橋。
      - 完成標準：notes 裡每個核心元件都出現在對照表上。
-   - **Mentor subagent**：以 Skill 工具呼叫 `tech-mentor`，主題帶入，照它的要求寫內容（每章 2–3 句概要＋一張 inline SVG，細節放 `<details>`），依片段契約寫到 `<dir>/part-mentor.html`。
+   - **Mentor subagent**：主題帶入，照第二部寫作要求寫內容（每章 2–3 句概要＋一張 inline SVG，細節放 `<details>`），依片段契約寫到 `<dir>/part-mentor.html`。
      - 每章概要第一句**回扣 notes 對照表裡的比喻**（例：「第一部的郵差，在這裡就是 resolver」），讓讀者把直覺接上正式名詞。
      - 在 `<details>` 裡附出處（repo 主題用 `path:line`，技術主題用來源網址）。
      - 完成標準：對照表上每個真實名詞都在第二部某一章被講到。
