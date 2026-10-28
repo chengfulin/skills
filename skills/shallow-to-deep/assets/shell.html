@@ -4,17 +4,20 @@
   :root {
     --bg: #faf8f4; --surface: #ffffff; --fg: #1f2328; --muted: #5f6b76; --line: #dcd6cc;
     --accent: #2f6fb3; --accent-2: #a85a14; --warn: #c2413b;
+    --accent-fill: #c3d9f2; --accent-2-fill: #f1cfad; --warn-fill: #f4c5c2;
     --radius: 14px; --maxw: 880px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #15171a; --surface: #1d2025; --fg: #e8e6e3; --muted: #9aa4ae; --line: #343a42;
       --accent: #6ea8e6; --accent-2: #f0a35a; --warn: #ef7b74; color-scheme: dark;
+      --accent-fill: #2b63a0; --accent-2-fill: #8f4a0f; --warn-fill: #9c2f2a;
     }
   }
   :root[data-theme="dark"] {
     --bg: #15171a; --surface: #1d2025; --fg: #e8e6e3; --muted: #9aa4ae; --line: #343a42;
     --accent: #6ea8e6; --accent-2: #f0a35a; --warn: #ef7b74; color-scheme: dark;
+    --accent-fill: #2b63a0; --accent-2-fill: #8f4a0f; --warn-fill: #9c2f2a;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
