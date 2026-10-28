@@ -1,6 +1,6 @@
 # SDD 憲章：Shell Script 延伸（SH）
 
-> 版本：5.5.0｜本文件為 [`constitution.md`](constitution.md) 之延伸，**須與核心原則（CP）、治理（GV）一併適用**。
+> 版本：5.6.0｜本文件為 [`constitution.md`](constitution.md) 之延伸，**須與核心原則（CP）、治理（GV）一併適用**。
 > RFC 2119 用語定義見核心文件。條款前綴為 `§SH-`。
 
 > **邊界聲明**：本檔只規範 Shell Script 的**應用面**（健全性、安全、可用性、測試）。若以容器化工具服務形式部署，部署與基礎設施見 [`constitution-deployment.md`](constitution-deployment.md)（DEP）。
@@ -33,5 +33,5 @@
 
 - Shell Script **不**套用數字覆蓋率門檻。
 - 含邏輯判斷的 Script **MUST** 撰寫測試（如以 bats 或等效工具），涵蓋**主要功能邏輯、邊界與例外情境**，且測試案例 **MUST** 通過。
-- 核心邏輯之測試案例設計方法依 §TR-7（輸入空間分割，依分級適用）。
+- 核心邏輯之測試案例設計方法依 §TR-7（輸入空間分割，強度與涵蓋範圍依分級適用）。
 - 純粹一次性、無分支邏輯的簡單 script **MAY** 豁免測試，但 **MUST** 在 spec / PR 說明理由。

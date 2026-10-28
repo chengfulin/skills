@@ -1,6 +1,6 @@
 # SDD 憲章：前端網頁應用延伸（FE）
 
-> 版本：5.5.0｜本文件為 [`constitution.md`](constitution.md) 之延伸，**須與核心原則（CP）、治理（GV）一併適用**。
+> 版本：5.6.0｜本文件為 [`constitution.md`](constitution.md) 之延伸，**須與核心原則（CP）、治理（GV）一併適用**。
 > RFC 2119 用語定義見核心文件。條款前綴為 `§FE-`。
 
 > **邊界聲明**：本檔只規範前端的**應用面**（UI、元件、前端安全、測試）。**部署、TLS、反向代理、安全標頭落點**見 [`constitution-deployment.md`](constitution-deployment.md)（DEP）。
@@ -63,5 +63,5 @@
 
 - 前端 **不**套用數字覆蓋率門檻。**MUST** 依 §CP-4 撰寫元件 / 單元測試（**SHOULD** 採用 Vitest + Vue Test Utils），以涵蓋主要功能邏輯、邊界與例外情境為驗收基準。
 - 測試 **MUST** 涵蓋元件的正常渲染、互動行為、邊界與錯誤狀態；對 API 呼叫 **SHOULD** 以 mock 隔離。
-- 核心邏輯之單元測試案例設計方法依 §TR-7（輸入空間分割，依分級適用）。
+- 核心邏輯之單元測試與 E2E 關鍵流程之案例設計方法依 §TR-7（輸入空間分割，強度與涵蓋範圍依分級適用）。
 - 關鍵使用者流程 **SHOULD** 另以端對端（E2E）測試（如 Playwright / Cypress）驗證。
