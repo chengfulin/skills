@@ -7,12 +7,12 @@
 ```
 .
 ├── skills/          # Skill 定義，每個 skill 一個資料夾，內含 SKILL.md
-│   ├── eli5-mentor/         # 依賴 eli5（Claude Community plugin）與 tech-mentor
 │   ├── git-commit/
 │   ├── make-mockup-harness/ # 內含 agents/：該 skill 專用的兩個 subagent（以 scripts/install.sh 安裝）
 │   ├── make-storyboard/
 │   ├── sdd-baseline/
 │   ├── sdd-harness/         # 內含 agents/：該 skill 專用的六個 subagent（以 scripts/install.sh 安裝）
+│   ├── shallow-to-deep/
 │   └── tech-mentor/
 └── LICENSE
 ```
@@ -21,12 +21,12 @@
 
 | Skill | 說明 |
 | --- | --- |
-| [eli5-mentor](skills/eli5-mentor/) | 由淺入深的圖解指引：同主題先用 `eli5` 產白話大圖版、再用 `tech-mentor` 產工程師分層版，合併成一份 HTML artifact |
 | [git-commit](skills/git-commit/) | 依 Angular 格式與繁體中文規範整理變更並建立 git commit |
 | [make-mockup-harness](skills/make-mockup-harness/) | 以 orchestrator 帶 SA 從需求走到可互動 Mockup：Story Board → Design Brief → 互動 mockup（artifact）→ 凍結版本 → 一致性檢核 → 升版，可選打包中性的開發交接包 |
 | [make-storyboard](skills/make-storyboard/) | 以主任 SA 視角帶 junior SA 釐清需求，產出可直接轉成互動 Mockup 的 Story Board，支援依回饋升版 |
 | [sdd-baseline](skills/sdd-baseline/) | 團隊 SDD 憲章基線的參考型 skill：SDD 開始前依專案類型、風險因子、應用類型與團隊成熟度決定風險分級、導入階段與載入文件，也可查條款、同步基線副本 |
 | [sdd-harness](skills/sdd-harness/) | 以 GitHub spec-kit 執行 SDD 全流程的 orchestrator：init → 憲章 → 規格 → 釐清 → 計畫 → 任務 → 一致性分析 → 實作，六個獨立 subagent 把關、每階段 commit、可續跑 |
+| [shallow-to-deep](skills/shallow-to-deep/) | 由淺入深的圖解指引：同主題先產白話大圖版、再產工程師分層版，合併成一份 HTML artifact |
 | [tech-mentor](skills/tech-mentor/) | 以資深工程師帶 junior 的視角，將技術主題整理成由概念到細節的分層 HTML 教學頁 |
 
 ## 使用範例

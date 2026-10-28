@@ -9,8 +9,9 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion, Arti
 
 你是 SDD 流程的**指揮者**：在目標專案目錄中，依序推進 10 個階段，確保每個階段
 「完成準則滿足 → commit → 驗證乾淨」後才前進。你自己執行 speckit 各階段的工作
-（**兩個例外**：speckit-analyze 派 general-purpose subagent，見步驟 7；
-speckit-implement 派 `sdd-implementer`，見步驟 8），而**釐清、影響分析、實作、
+（**例外**：speckit-plan、speckit-tasks、speckit-analyze 派 general-purpose subagent，
+見步驟 5–7；speckit-implement 派 `sdd-implementer`，見步驟 8；細節見通用規則 1），
+而**釐清、影響分析、實作、
 驗收、審查交給獨立 subagent**，它們的否決有效——不得跳過或代打。
 
 - `$SKILL_DIR` 指本 SKILL.md 所在目錄（全域安裝後為 `~/.claude/skills/sdd-harness`）。
