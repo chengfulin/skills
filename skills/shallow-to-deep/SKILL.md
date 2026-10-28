@@ -15,17 +15,17 @@ argument-hint: <主題，或 repo／目錄路徑＋想了解的面向>
 兩部各自交付**片段檔**，最後只發布一份合併後的 artifact。片段契約：
 
 - 第一部寫成 `<section class="part" id="part-eli5">…</section>`，第二部寫成 `<section class="part" id="part-mentor">…</section>`；不含 `<html>`、`<head>`、`<body>`（shell 本身也不含，發布時由 Artifact 包上）。
-- 每章一個 `<article class="chapter" id="<唯一 id>">`，章名用 `<h2>`。目錄由 shell 依 `h2` 自動產生。
+- 每章一個 `<article class="chapter" id="<唯一 id>">`，章名用 `<h2>`。目錄由 shell 依 `h2` 自動產生成 `<ol>`，章名**不自帶編號**（「1. 」「一、」之類），否則目錄會編兩次。
 - 片段內所有 `id`（章節、SVG 的 `marker`／`symbol`／`gradient`／`clipPath` 等）一律加前綴：第一部 `e-`、第二部 `m-`（例：`e-flow`、`m-arr`）。兩部並行撰寫，不加前綴容易撞名。
-- 每張 SVG 自帶它用到的 `<defs>`；`href="#…"`／`url(#…)` 只引用同一張 SVG 內的 id，不跨 SVG 共用。章節被收合或抽掉時，其他圖才不會斷。id 仍須全頁唯一，所以 defs 的 id 帶上章節名（例：`e-flow-arr`、`m-story-arr`）。
+- 每張 SVG 自帶它用到的 `<defs>`；`href="#…"`／`url(#…)` 只引用同一張 SVG 內的 id，不跨 SVG 共用。id 仍須全頁唯一，所以 defs 的 id 帶上章節名（例：`e-flow-arr`、`m-story-arr`）。
 - 配色只用 shell 的 CSS 變數（`--bg` `--surface` `--fg` `--muted` `--line` `--accent` `--accent-2` `--warn`），SVG 的 `fill`／`stroke` 也一樣，深淺色主題才會一致。可用的值只有 `var(--…)`、`none`、`currentColor`；不寫 hex、`rgb()`／`hsl()`、具名顏色（`white`、`black`、`gray`…）。需要額外樣式時，放在片段內的 `<style>`，選擇器一律以 `#part-eli5` 或 `#part-mentor` 開頭。
-- 對比度在深淺色兩個主題都要達標：一般文字 ≥ 4.5、大字（≥ 18.66px 粗體或 ≥ 24px）≥ 3、理解圖意必需的形狀與線條 ≥ 3。依目前 shell 色值，照下列用法就會達標：
-  - `--fg` `--muted` `--accent` `--accent-2` `--warn` 對 `--surface`／`--bg` 兩個主題都 ≥ 4.7，可用於文字與必要的形狀、線條。
-  - `--line` 只有約 1.4，只能用在裝飾線、分隔線與次要框線；表達圖意的線（牆、時間軸、流程箭頭）改用 `--muted` 或彩色 token。
-  - 色塊上的文字用 `--bg` 或 `--surface`（疊在 `--accent`／`--accent-2`／`--warn`／`--fg` 色塊上都 ≥ 4.7）。
-  - 兩個彩色 token 直接疊放（如 `--accent-2` 疊在 `--accent` 上）不保證對比；有意義的相鄰色塊用 `--surface` 描邊或留白隔開。
-  - 文字與必要圖形不加 `opacity`／`fill-opacity`，透明度會拉低對比。
+- shell 的色值已調到深淺色主題都符合對比度門檻，照下列用法就不會出問題：
+  - 文字與表達圖意的形狀、線條用 `--fg` `--muted` `--accent` `--accent-2` `--warn`。
+  - `--line` 只用在裝飾線、分隔線與次要框線；表達圖意的線（牆、時間軸、流程箭頭）改用 `--muted` 或彩色 token。
+  - 色塊上的文字用 `--bg` 或 `--surface`。兩個彩色 token 不直接疊放，有意義的相鄰色塊用 `--surface` 描邊或留白隔開。
+  - 文字與必要圖形不加 `opacity`／`fill-opacity`。
 - SVG 一律用 `viewBox`，不在屬性寫死像素寬度。內容圖加 `width="100%"` 隨欄寬縮放；固定尺寸的小圖示（如角色卡圖示）改由片段 `<style>` 的 CSS 控制大小，不必加 `width="100%"`。不載入外部資源。
+- SVG 文字要放得進它所在的色塊：粗估寬度＝中日韓字每字 1em、英數每字 0.55em（em 取該文字的 font-size），不得超出包住它的 `<rect>` 或 viewBox。長標籤改短、拆兩行，或把色塊加寬。
 
 ## 兩部的寫作要求
 
@@ -38,40 +38,22 @@ argument-hint: <主題，或 repo／目錄路徑＋想了解的面向>
 
 工作目錄：scratchpad 下的 `shallow-to-deep/<主題-slug>/`（下稱 `<dir>`，一律用絕對路徑交給 subagent）。
 
-## 實看環境
-
-步驟 4、5 要在瀏覽器實看頁面時，一律用 headless Chrome 搭配自己起的本機伺服器，不用 Claude in Chrome（它打不開 `file://`）。
-
-1. **驗證目錄**：建 `<dir>-verify/`（下稱 `<vdir>`），把 `<dir>/index.html` 複製進去。shell 只靠 `<html data-theme>` 切換主題，在**副本**的 `</body>` 前（沒有就附在檔尾）注入一段 script，讀網址參數 `?theme=light|dark` 設定 `data-theme`；需要取計算後樣式時，同一段 script 把結果寫進 DOM 供 `--dump-dom` 讀出。不修改 `<dir>/index.html`。
-2. **本機伺服器**：shell 沒有 `meta charset`（發布時由 Artifact 補上），伺服器必須回 `charset=utf-8`，否則中文亂碼。在背景啟動並記下 PID：
-   ```bash
-   python3 -c 'import functools,http.server as h,sys;h.SimpleHTTPRequestHandler.extensions_map[".html"]="text/html; charset=utf-8";h.test(HandlerClass=functools.partial(h.SimpleHTTPRequestHandler,directory=sys.argv[1]),port=int(sys.argv[2]),bind="127.0.0.1")' "<vdir>" 8765 &
-   ```
-   用 `curl -sI http://127.0.0.1:8765/index.html` 確認 `Content-type: text/html; charset=utf-8`。埠被占用就換一個。
-3. **headless Chrome**：macOS 為 `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"`，其他平台找 `google-chrome`／`chromium`。每次執行都加 `--headless=new --hide-scrollbars --user-data-dir=<vdir>/profile`：
-   - 截圖：`--window-size=1280,<高度> --screenshot=<vdir>/<名稱>.png "http://127.0.0.1:8765/index.html?theme=dark"`；手機寬度用 `--window-size=390,<高度>`。
-   - 取 DOM：`--dump-dom "<網址>"`，讀注入 script 寫入的結果。
-4. **收尾（必做）**：`kill <PID>`，以 `lsof -i :<埠>` 確認埠已釋放，再 `rm -rf <vdir>`（含 profile 與截圖）。需要留存的證據先複製到 scratchpad 的其他目錄，並在回報寫出路徑。
-5. 找不到 Chrome 或伺服器起不來時，回報寫「未實看」與原因，不得當作通過。
-
 ## 分工
 
-主對話只做三件事：蒐集事實、派工、發布。其餘工作各交給一個獨立 subagent（`general-purpose`）：
+主對話蒐集事實、派工、合併、靜態檢核、實看、發布。撰寫與驗證交給獨立 subagent（`general-purpose`）：
 
 | 角色 | 做什麼 | 產出 |
 | --- | --- | --- |
-| 主對話 | 蒐集事實、定比喻、派工、轉交發現、發布、回報 | `notes.md`、artifact 連結 |
+| 主對話 | 蒐集事實、定比喻、派工、合併、靜態檢核、實看、修正、發布、回報 | `notes.md`、`index.html`、artifact 連結 |
 | ELI5 subagent | 依第一部寫作要求寫第一部 | `part-eli5.html` |
 | Mentor subagent | 依第二部寫作要求寫第二部 | `part-mentor.html` |
-| 內容驗證 subagent（每部一個） | 唯讀，對照原始來源驗證該部的敘述是否正確 | 內容發現表 |
-| 整合 subagent | 套 shell 合併、靜態檢核、實看深淺色與手機寬度、修格式問題 | `index.html`＋檢核結果 |
-| 對比度 review subagent | 唯讀，計算每張圖在深淺色主題下的顏色對比度 | 對比度發現表 |
+| 內容驗證 subagent | 唯讀，對照原始來源驗證合併後兩部的敘述是否正確、是否互相一致 | 內容發現表 |
 
-這樣分的理由：兩部的寫作要求各自完整進入一個乾淨的 context，不會互相稀釋；兩部共用 `notes.md` 的比喻與對照表，可以並行；片段全文不經過主對話。指引文件的價值在於內容正確，所以內容由沒參與撰寫的 subagent 回到原始來源驗證，對比度也由沒參與撰寫與合併的 subagent 審查，才不會替自己背書。
+這樣分的理由：兩部的寫作要求各自完整進入一個乾淨的 context，不會互相稀釋；兩部共用 `notes.md` 的比喻與對照表，可以並行；片段全文不經過主對話。指引文件的價值在於內容正確，所以內容由沒參與撰寫的 subagent 回到原始來源驗證，才不會替自己背書；一個人同時讀兩部，也才看得出第一部的比喻說法與第二部的真實說法有沒有矛盾。
 
-subagent 只看得到 brief，因此每份 brief 都要寫明 `<dir>` 的絕對路徑，以及該步驟列出的內容。撰寫兩部的 brief 另要寫明：要讀的 `notes.md`、**該部的寫作要求原文**（「兩部的寫作要求」中對應的那一條）、**本頁「交付規則」整段原文**、產出檔路徑、「不要發布 artifact，只寫片段檔」、完成標準，以及回報格式（檔案路徑、章節清單、沒涵蓋到的項目）。需要實看的 brief（步驟 4、5）附上**本頁「實看環境」整段原文**。
+subagent 只看得到 brief，因此每份 brief 都要寫明 `<dir>` 的絕對路徑，以及該步驟列出的內容。撰寫兩部的 brief 另要寫明：要讀的 `notes.md`、**該部的寫作要求原文**（「兩部的寫作要求」中對應的那一條）、**本頁「交付規則」整段原文**、產出檔路徑、「不要發布 artifact，只寫片段檔」、完成標準，以及回報格式（檔案路徑、章節清單、沒涵蓋到的項目）。
 
-環境沒有 Agent 工具時，主對話依序自己做步驟 2–5 的內容，規則不變。
+環境沒有 Agent 工具時，主對話依序自己做步驟 2 與 4 的內容，規則不變。
 
 ## 步驟
 
@@ -91,37 +73,47 @@ subagent 只看得到 brief，因此每份 brief 都要寫明 `<dir>` 的絕對�
      - 在 `<details>` 裡附出處（repo 主題用 `path:line`，技術主題用來源網址）。
      - 完成標準：對照表上每個真實名詞都在第二部某一章被講到。
    - 回報有未涵蓋項目時，以 SendMessage 請該 subagent 補齊，補齊後才進步驟 3。
-3. **內容驗證（每部一個 subagent，該部完成就派，兩部的驗證並行進行）。** 唯讀，不修改任何檔案。brief 附上該部片段檔、`notes.md` 的絕對路徑、原始來源位置（repo 路徑，或技術主題的權威來源），並寫明該部的定位（第一部允許簡化，但不得說錯；第二部要精確）。工作：
-   - 逐條驗證片段裡的事實敘述：流程順序、角色職責與權限、數字與上限、觸發條件、因果關係。圖裡的文字、標籤、箭頭方向與先後順序也算敘述。
+3. **合併並做靜態檢核（主對話自己做）。** 複製 [assets/shell.html](assets/shell.html) 到 `<dir>/index.html`，替換佔位符：
+   - `{{TITLE}}`：2–4 個字的頁名（例：「DNS 由淺入深」）。
+   - `{{SUBTITLE}}`：一句話說明這份指引帶讀者從哪裡走到哪裡。
+   - `{{PART_ELI5}}`、`{{PART_MENTOR}}`：兩個片段檔的完整內容。
+
+   接著對兩個片段檔跑靜態檢核，不必開瀏覽器：
+
+   ```bash
+   python3 <本 skill 目錄>/assets/check.py <dir>/part-eli5.html <dir>/part-mentor.html
+   ```
+
+   它逐項檢查（最後一行 `靜態檢核：PASS`，否則列出問題）：
+   - 外層 `section` 與 id、每章 `article`＋`h2`，章名不自帶編號；沒有 `html`／`head`／`body`、`script`、外部資源。
+   - 所有 `id="…"` 都帶 `e-`／`m-` 前綴，且全頁唯一。
+   - 沒有寫死的顏色（hex、`rgb(`、`hsl(`、具名顏色）；沒有 `opacity`。
+   - 每個 `<svg>` 有 `viewBox`，屬性沒有像素寬度。
+   - 每個 `href="#…"`／`url(#…)` 指到的 id 存在於同一個 `<svg>` 內。
+   - 片段 `<style>` 的選擇器都以 `#part-eli5` 或 `#part-mentor` 開頭。
+   - 每個 SVG `<text>` 的粗估寬度（中日韓字 1em、英數 0.55em）不超出包住它的 `<rect>` 或 viewBox（容忍 4px；旋轉、多行與 transform 群組外的對照不估）。
+
+   另用 grep 確認：對照表的每一列在第二部都找得到對應章節。
+
+   格式類問題（寫死顏色、id 重複或缺前綴、選擇器前綴、跨 SVG 引用、章名編號、文字溢出）主對話直接修片段後重新合併，直到 PASS；內容缺漏（對照表某列在第二部沒有對應）以 SendMessage 請 Mentor subagent 補寫，再重新合併。
+4. **派內容驗證 subagent。** 唯讀，不修改任何檔案。brief 附上 `<dir>/index.html`、`notes.md` 的絕對路徑、原始來源位置（repo 路徑，或技術主題的權威來源），並寫明兩部的定位（第一部允許簡化，但不得說錯；第二部要精確）。工作：
+   - 逐條驗證兩部的事實敘述：流程順序、角色職責與權限、數字與上限、觸發條件、因果關係。圖裡的文字、標籤、箭頭方向與先後順序也算敘述。
    - 回到**原始來源**核對，不只比對 `notes.md`（notes 本身也可能有誤）。repo 主題讀出處檔案本身；技術主題查官方文件或權威來源，涉及版本的敘述要確認版本。
    - 第二部的 `path:line` 出處要指到真正支持該敘述的內容。
-   - 比喻不得誤導：比喻角色的行為要和真實元件一致（例：比喻說「驗收員順手修好」，實際元件卻是唯讀，就是錯）。
+   - 比喻不得誤導：比喻角色的行為要和真實元件一致（例：比喻說「驗收員順手修好」，實際元件卻是唯讀，就是錯）。第一部的比喻說法與第二部對同一元件的說法要一致。
    - 分級：**錯誤**（與來源矛盾，或會讓讀者誤解）必修；**不精確**（簡化過頭但不誤導）建議修；**無法查證**（找不到來源支持）列出。
    - 回報（≤40 行）：結論行 `內容驗證：PASS` 或 `N 項發現（錯誤 x、不精確 y、無法查證 z）`；發現逐列寫出章節 id、原文摘句、問題、證據（`path:line` 或網址）、建議改寫。
-   - 處理：主對話把發現表轉給該部的撰寫 subagent（SendMessage，屬同一任務的續作）修正，再請驗證 subagent 只複核這幾項。錯誤源自 `notes.md` 時，主對話先修 notes，並通知兩部的撰寫 subagent，另一部有同樣敘述也要一起修。最多 2 輪；仍有錯誤時，以 AskUserQuestion 請使用者決定保留、刪除或改寫，其餘列入步驟 7 的回報。
-   - 兩部都通過驗證（或剩餘發現已由使用者決定）後，才進步驟 4。
-4. **派整合 subagent。** brief 附上 shell 的絕對路徑（本 skill 目錄下的 [assets/shell.html](assets/shell.html)）、`<dir>`、`notes.md`、交付規則與實看環境原文，以及下列工作：
-   - 複製 shell 到 `<dir>/index.html`，替換佔位符：
-     - `{{TITLE}}`：2–4 個字的頁名（例：「DNS 由淺入深」）。
-     - `{{SUBTITLE}}`：一句話說明這份指引帶讀者從哪裡走到哪裡。
-     - `{{PART_ELI5}}`、`{{PART_MENTOR}}`：兩個片段檔的完整內容。
-   - 靜態檢核（逐項）：
-     - 兩個片段都符合片段契約（外層 `section` 與 id、每章 `article`＋`h2`、所有 id 帶 `e-`／`m-` 前綴且全頁唯一、額外樣式的選擇器前綴）。
-     - 每張 SVG 的配色只用契約允許的值，沒有寫死的顏色。
-     - 每張 SVG 有 `viewBox`，屬性沒有寫死像素寬度。
-     - 每個 `href="#…"`／`url(#…)` 都指到同一張 SVG 內存在的 id。
-     - 對照表的每一列在第二部都找得到對應章節。
-   - 實看檢核（依「實看環境」）：淺色、深色各截一次全頁圖，再以 390px 寬截一次，並以注入 script 比對 `scrollWidth` 與 `clientWidth`。確認每張圖都看得見、文字沒有超出框、沒有破版或水平捲動、目錄列出兩部所有章節。
-   - 格式類問題（寫死顏色、id 重複或缺前綴、選擇器前綴、跨 SVG 引用、破版、文字溢框）直接修片段後重新合併；內容缺漏（對照表某列在第二部沒有對應）不自行補寫，回報給主對話。
-   - 回報：`index.html` 路徑、每項檢核結果（實看附看到什麼）、修了什麼、還缺什麼、實看環境已收尾。
-   - 回報有內容缺漏時，請對應的部分 subagent 補齊，補寫部分照步驟 3 再驗證一次，再請整合 subagent 重新合併檢核。
-5. **派對比度 review subagent。** 整合回報通過後派遣，唯讀，不修改任何受審檔案。brief 附上 `<dir>/index.html` 與 shell 的絕對路徑、實看環境原文，以及下列工作：
-   - 從 shell 讀出淺色與深色兩組 token 的實際色值（`:root` 與深色區塊）。
-   - 依「實看環境」載入頁面，以注入 script 對每張 SVG 的元素取 `getComputedStyle` 的 `fill`／`stroke`／`opacity`（祖先的 opacity 要相乘），淺色、深色各算一次。
-   - 逐張 SVG 列出每組「前景 → 背景」配對：圖上的文字對它所在的形狀或頁面底色、形狀與線條對它所在的底色。有透明度時先依透明度與底色混色再計算。
-   - 依 WCAG 對比度公式計算比值，門檻同交付規則。純裝飾、不影響理解的元素不計，回報要說明排除了哪類元素。
-   - 另截淺色、深色全頁圖實看，補抓計算看不出的問題（文字疊在線上、標籤被色塊蓋住）。
-   - 回報（≤40 行）：結論行 `PASS` 或 `N 項不足`；不足項逐列寫出章節 id、元素（文字內容或形狀描述）、前景／背景 token、淺色比值、深色比值、建議改用的 token；另寫實看環境已收尾。
-   - 回報有不足項時，問題出在 shell 色值（同一 token 在全頁大量不足）就由主對話提出修改 shell 的方案，請使用者決定；出在片段用法就把發現表轉給整合 subagent（SendMessage，屬同一任務的續作），由它改片段的 token 並重新合併。之後請對比度 review subagent 只複核這幾項。最多 2 輪，仍不足的列入步驟 7 的回報。
-6. **發布。** 主對話依 Artifact 工具規範發布 `<dir>/index.html`（shell 已符合頁面契約：title、色彩 token、深淺色、手機寬度），`icon` 用 `book`，`description` 一句話寫主題。之後的修正都以同一路徑重發。
-7. **回報。** 回報 artifact 連結、第一部用的比喻、內容驗證結果（兩部各自修了幾項、剩下什麼）、整合檢核結果（含是否實看），以及對比度審查結果（全數通過，或還有哪些未解決）。
+   - 處理：主對話依發現表直接修片段（錯誤源自 `notes.md` 時一併修 notes，另一部有同樣敘述也要一起修），重新合併、重跑 check.py，只做一輪，不再派驗證。無法查證與未修的項目列入步驟 7 的回報。
+5. **實看（一次，主對話自己做）。** 內容修完、check.py 通過後，用 headless Chrome 看一遍版面；check.py 估的是寬度，抓不到字型實際較寬、標籤互相重疊、色塊互相蓋住這類問題。不起伺服器、不用 Claude in Chrome（它開不了 `file://`）：
+
+   ```bash
+   python3 <本 skill 目錄>/assets/snapshot.py <dir>/index.html <dir>-verify
+   ```
+
+   腳本在 `<dir>-verify/` 建驗證副本（補 doctype 與 charset，注入切主題／分部／分頁的 script，不動 `index.html`），印出：
+   - 最小寬度 720px（直式手機 9:16 的下限）的 `.wrap` 有無水平溢出（scrollWidth 等於 clientWidth 才算 OK）。不另做更窄的檢查。
+   - 各部高度，與截圖清單：頁首（目錄）淺色一張；每部深色依 3000px 分頁、淺色第一頁。
+
+   以 Read 工具逐張看圖，確認：目錄列出兩部所有章節且不重複編號；每張圖都看得見；文字沒有被色塊邊緣裁掉或跑到框外；同一列標籤沒有互相重疊；箭頭、框線沒有壓到文字；深淺色都看得清楚。有問題就修片段、重跑 check.py、重新合併，只重拍受影響的那幾頁（`snapshot.py` 整個重跑也可以）。看完 `rm -rf <dir>-verify`。腳本找不到 Chrome（退出碼 2）時，回報寫「未實看」與原因，不得當作通過。
+6. **發布。** 主對話依 Artifact 工具規範發布 `<dir>/index.html`（shell 已符合頁面契約：title、色彩 token、深淺色、最小寬度），`icon` 用 `book`，`description` 一句話寫主題。之後的修正都以同一路徑重發。
+7. **回報。** 回報 artifact 連結、第一部用的比喻、靜態檢核修了什麼、實看修了什麼（或未實看與原因），以及內容驗證結果（修了幾項、剩下什麼）。
