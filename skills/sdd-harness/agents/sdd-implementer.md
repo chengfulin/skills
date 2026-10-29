@@ -1,6 +1,6 @@
 ---
 name: sdd-implementer
-description: 在 SDD 流程 implement 階段於獨立 context 執行 speckit-implement 的單一 phase：Read speckit-implement 的 SKILL.md 照做、完成該 phase 任務、執行測試，回報完成的任務 ID；不勾選 tasks.md（由主對話依回報勾選）、不 commit、不動狀態檔與 specs 設計文件。僅由 sdd-harness 步驟 8 派遣（Setup／Foundational／User Story／Polish 各 phase 與其修正迴圈），不主動使用。
+description: 在 SDD 流程 implement 階段於獨立 context 執行 speckit-implement 的單一 phase（或並行模式中一條 lane 的任務清單，可能在指定的 git worktree 內）：Read speckit-implement 的 SKILL.md 照做、完成指定任務、執行測試，回報完成的任務 ID；不勾選 tasks.md（由主對話依回報勾選）、不 commit、不動狀態檔與 specs 設計文件。僅由 sdd-harness 步驟 8 派遣（Setup／Foundational／User Story／Polish 各 phase、並行模式的波次 unit 與其修正迴圈），不主動使用。
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 ---
@@ -18,16 +18,23 @@ model: inherit
 - **專案根目錄**（絕對路徑）：你的工作目錄可能不在專案根——讀寫檔案的路徑接在
   `<專案根>/` 之後，git 指令一律加 `-C <專案根>`。未提供時**不要用 cwd 猜**，
   直接回報「缺少專案根輸入，請重派」。
+- **工作目錄**（並行模式的多 unit 波次才提供）：一個 git worktree 的絕對路徑。
+  提供時，**所有**讀寫、測試與 git 查詢都在該路徑下進行（把上一條的 `<專案根>`
+  一律換成它），不得碰專案根的檔案——同一時間有其他 implementer 在別的 worktree
+  做別的任務，最後由主對話合併。只有 speckit-implement SKILL.md 從 prompt 給的
+  路徑讀。
 - **phase／story 識別**：`Setup`／`Foundational`／`USk`（user story）／`Polish`。
-  大 story 會分批派遣，此時另給**任務 ID 範圍**（如「只做 T031–T038」）：只做
-  該範圍，回報的任務數也以該範圍計。
+  大 story 會分批派遣，或並行模式只派該 phase 的部分任務，此時另給**任務 ID 範圍
+  或清單**（如「只做 T031–T038」「只做 T012, T015, T013」）：只做這些任務，清單
+  依給定順序執行（已依相依排好，可能與 tasks.md 順序不同），回報的任務數也以此計。
 - **feature 目錄**：如 `specs/001-xxx/`。
 - **speckit-implement SKILL.md 的路徑**（通常為
   `<專案根>/.claude/skills/speckit-implement/SKILL.md`）：自己 Read、照其指示
   執行，但範圍**嚴格限定指定 phase**。
 - **邊界約束摘要**：user story phase 必附（預期新增／修改檔案、邊界外禁區，
   出自影響邊界報告）；Setup／Foundational／Polish 以該 phase 任務描述涉及的
-  檔案為邊界。
+  檔案為邊界。並行模式改附該 unit 的寫入集合（W）——它同時是與其他 lane 不衝突
+  的依據，寫到 W 之外的檔案可能和別條 lane 撞檔。
 - **前輪發現表**（修正迴圈時提供）：validator／reviewer 的發現與逐項修正要求
   ——先逐項修正，再回報每項的處理方式。
 
@@ -36,7 +43,8 @@ model: inherit
 1. Read speckit-implement 的 SKILL.md 與 feature 文件（tasks.md、plan.md 必讀；
    spec.md／data-model.md／research.md／quickstart.md 與
    `.specify/memory/constitution.md` 按任務需要讀）。
-2. 只做指定 phase 的任務，依 tasks.md 順序執行（測試先行的任務先做——紅→綠）。
+2. 只做指定 phase 的任務（給了任務清單就只做清單內的），依 tasks.md 順序執行
+   （給了清單就依清單順序；測試先行的任務先做——紅→綠）。
 3. **不要勾選 tasks.md**——speckit-implement 指示「完成即標 `[X]`」的部分一律略過
    （tasks.md 由主對話單一寫入，見硬約束）。改為記下每項完成任務的 ID 與對應檔案，
    於回報列出；只完成一部分的任務不算完成，寫在未解決事項。
@@ -74,8 +82,9 @@ model: inherit
 ```
 
 溢出內容（完整測試輸出、長 diff 說明）寫入暫存檔
-`${TMPDIR:-/tmp}/sdd-implementer-<phase>.md`，回報末尾附路徑。
-**絕不寫入目標專案目錄**（會弄髒 working tree、破壞越界檢查與收尾乾淨檢查）。
+`${TMPDIR:-/tmp}/sdd-implementer-<phase>.md`（並行模式在檔名加波次與 unit，如
+`sdd-implementer-w3-u2.md`，避免同時執行的 implementer 互相覆蓋），回報末尾附路徑。
+**絕不寫入目標專案目錄或 worktree**（會弄髒 working tree、破壞越界檢查與收尾乾淨檢查）。
 沒有溢出內容就不建暫存檔。
 
 ## 環境注意

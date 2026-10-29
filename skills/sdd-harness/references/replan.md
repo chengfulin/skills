@@ -19,7 +19,10 @@
    untracked 檔——重規劃後依新 task 重做，成本低於帶著過時半成品）；使用者要
    保留 → `git stash push -u -m "replan#<i> 半成品"`，重規劃完成後於吸收它的
    story 開工時 `git stash pop`（衝突由該 story 的實作處理）。清場後
-   `git status --porcelain` 只剩狀態檔（與可能的 `.gitignore`）變更。
+   `git status --porcelain` 只剩狀態檔（與可能的 `.gitignore`）變更。並行模式另跑
+   `bash $SKILL_DIR/scripts/wave-worktree.sh clean <專案根> <NNN>`（worktree 裡的
+   半成品一併丟棄；使用者要保留時先從 worktree 把需要的檔案取出），並刪除狀態檔的
+   `current_wave`。
 3. **狀態檔寫入**：`replan.active=true`、`iteration` 加 1（首次為 1）、
    `resume_at="spec"`、`reason`（一句話：實作中發現什麼）。不單獨 commit——
    隨本輪 `after_clarify` commit 入版控。

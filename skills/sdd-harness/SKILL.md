@@ -59,7 +59,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion, Arti
 | 5 | 計畫 | 問技術選型（tech-standards 為預設）→ speckit-plan | 使用者 review plan（導覽簡報） | ✅ |
 | 6 | 任務 | speckit-tasks | — | ✅ |
 | 7 | 一致性分析 | speckit-analyze | sdd-spec-clarifier（full）＋ 使用者同意修正（導覽簡報） | ✅（恆有：至少狀態檔）|
-| 8 | 實作 | 逐 story：影響邊界 → 派實作 → 越界檢查 → 驗證 → 審查 → commit | sdd-impact-analyzer + sdd-implementer + sdd-feature-validator + sdd-code-reviewer | ✅ 每 story |
+| 8 | 實作 | 並行規劃定模式 → 依序模式逐 story（影響邊界 → 派實作 → 越界檢查 → 驗證 → 審查 → commit）或並行模式逐波次（多 lane 各自 worktree 實作 → 合併 → 越界檢查 → 整合測試 → 審查＋驗收 → commit） | sdd-impact-analyzer + sdd-implementer + sdd-feature-validator + sdd-code-reviewer | ✅ 每 story／波次 |
 | 8R | 重規劃（條件性）| 實作中發現規劃不可行：修訂 spec → 重跑 4–7 → 以新增 task 修正既有內容 | 人為 review ＋沿用 4–7 各階段把關 | ✅ 沿用 4–7 的 commit 點 |
 
 ## 通用規則（全程適用）
@@ -300,15 +300,17 @@ speckit-constitution → 寫 README「SDD 導入宣告」與 `sdd-adoption.json`
 4. `steps.analyze.done=true`（+`findings`/`remediated` 計數）→ `after_analyze`
    commit 驗證（無修改時只會 commit 狀態檔更新，屬正常）。
 
-## 步驟 8：實作（/speckit.implement，逐 story 閘門）
+## 步驟 8：實作（/speckit.implement，依序模式逐 story／並行模式逐波次）
 
 **Read `$SKILL_DIR/references/implement-loop.md`，全程照它執行**（進入本步驟時讀；
-每個 story 收尾前重讀其 checklist 節）。它定義索引準備、測試工具前置、tasks.md
+每個 story／波次收尾前重讀其 checklist 節）。它定義索引準備、測試工具前置、tasks.md
 勾選（implementer 只回報任務 ID，由你單一寫入）、Setup 前的 task 粒度全域並行規劃
-（只算 task 相依、低信心 task 視為與全部衝突；觀察期只產出批次建議，執行仍逐 phase
-依序）、逐 phase 的派遣與閘門順序
-（影響邊界 → implementer → 勾選 → 越界檢查 → validator → reviewer → commit）
-與 story 收尾 checklist；修正迴圈依通用規則 4（上限 3 輪）。
+與模式判定（只算 task 相依、低信心 task 視為與全部衝突；codegraph 分析且波次估計
+加速 ≥1.5× 才走並行模式）、依序模式逐 phase 的派遣與閘門順序
+（影響邊界 → implementer → 勾選 → 越界檢查 → validator → reviewer → commit）、
+並行模式的波次迴圈（每個 phase 一條 lane、至多 3 條各在自己的 worktree 同時實作
+→ 合併 → 勾選 → 越界檢查 → 整合測試 → reviewer＋validator → commit）
+與兩者的收尾 checklist；修正迴圈依通用規則 4（上限 3 輪）。
 
 ## 步驟 8R：重規劃閘門（僅在實作中發現規劃不可行時進入）
 

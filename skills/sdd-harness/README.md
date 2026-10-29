@@ -27,8 +27,12 @@ sdd-harness（orchestrator skill）
    │        → 簡報列發現表 → 使用者同意修正 ───────────────── commit（恆有：至少狀態檔）
    │  8  /speckit.implement ─ codegraph 建索引；Setup 前依 phase 並行派
    │        [sdd-impact-analyzer]（plan 模式）逐 task 取集合 → task-plan.py
-   │        排出全域並行批次建議 ───────────────────────────── commit
-   │        之後逐 user story：
+   │        排出全域並行批次、決定執行模式 ──────────────────── commit
+   │        並行模式（codegraph 且估計加速 ≥1.5×）逐波次：
+   │        每個 phase 一條 lane，至多 3 個 [sdd-implementer] 各在 worktree 實作
+   │        → 合併 → 越界檢查 → 整合測試 → [sdd-code-reviewer]＋[sdd-feature-validator]
+   │        → 通過才 commit → codegraph sync
+   │        依序模式逐 user story：
    │        [sdd-impact-analyzer] 影響邊界 → [sdd-implementer] 實作（限定邊界）→
    │        [sdd-feature-validator] 驗收 → [sdd-code-reviewer] 審查（含漣漪檢查）
    │        → 通過才 commit → codegraph sync
@@ -105,7 +109,8 @@ sdd-harness/
     ├── install.sh                 # 冪等安裝（symlink skill、agents、sdd-baseline 到 ~/.claude/）
     ├── copy-baseline.sh           # 把憲章來源（sdd-baseline 副本或自訂憲章）複製到目標專案並確保 manifest
     ├── detect-stage.sh            # 續跑階段偵測（state file + 檔案系統啟發法）
-    ├── task-plan.py               # task 粒度全域並行規劃：衝突判定、分批、涵蓋率核對（步驟 8 的 0P 與完成報告）
+    ├── task-plan.py               # task 粒度全域並行規劃：衝突判定、分批、模式判定、波次排程、涵蓋率核對
+    ├── wave-worktree.sh           # 並行模式的 worktree 建立、合併回專案根、續跑查詢與清理
     └── enable-autocommit.sh       # 啟用 spec-kit git extension 的階段 auto-commit
 ```
 
@@ -118,16 +123,34 @@ sdd-harness/
 - **每階段一個 commit**：spec-kit git extension 的 auto-commit 出廠全部停用，且 optional hooks
   不會自動執行；本 skill 以 `enable-autocommit.sh` 逐項啟用 `after_*` 事件，
   orchestrator 在每階段收尾主動執行並驗證，缺漏時手動補 commit。
-- **實作階段逐 story 把關**：每個 user story 開工前由 `sdd-impact-analyzer` 產出影響邊界報告；
+- **實作階段逐 story 把關（依序模式）**：每個 user story 開工前由 `sdd-impact-analyzer` 產出影響邊界報告；
   實作由 `sdd-implementer` 在獨立 context 執行，只回報完成的任務 ID，tasks.md 勾選由主對話
   單一寫入；完成後先由
   `sdd-feature-validator` 逐條驗收、再由 `sdd-code-reviewer` 審查憲章合規與漣漪效應，
   全數通過才 commit 繼續。
-- **並行規劃（觀察期，task 粒度）**：Setup 開工前依 phase 並行派 analyzer，逐 task 取得
+- **並行規劃與並行實作（task 粒度）**：Setup 開工前依 phase 並行派 analyzer，逐 task 取得
   寫入／讀取集合、共用資源、契約變更、task 相依與信心，由 `scripts/task-plan.py` 對全部
   task 兩兩判定衝突（只算 task 相依；信心低＝落點要等別的 task 實作後才知道者，視為與全部
-  衝突），排出全域並行批次與關鍵路徑寫入 `parallel-plan.json` 與狀態檔；執行仍逐 phase
-  依序，完成報告附集合涵蓋率與可能漏判，作為日後是否導入並行實作的依據。
+  衝突），排出全域並行批次與關鍵路徑寫入 `parallel-plan.json` 與狀態檔，並模擬波次決定
+  模式：codegraph 分析且估計加速 ≥1.5× 走**並行模式**——每個波次每個 phase 一條 lane，
+  至多 3 個 implementer 各在自己的 git worktree 實作，合併回專案根後整批過越界檢查、
+  整合測試、審查與驗收，一個波次一個 commit；撞檔累計 2 個波次即建議降級。其餘走
+  **依序模式**（逐 phase）。完成報告附集合涵蓋率與可能漏判，供校準門檻。
+
+  > **名詞：批次與波次**（本 skill 自訂，非軟體工程慣用語）
+  >
+  > - **批次（batch）**：規劃產物。把 task 依衝突關係分層，同一批內的 task 兩兩不衝突，
+  >   理論上可以一人一個同時開工。批次數用來衡量並行潛力，**不照它執行**。
+  > - **波次（wave）**：執行單位，取「物流波次揀貨（wave picking）」一波集中處理的意思。
+  >   每個 phase 一條 lane，一條 lane 由一個 implementer 依序做一串 task；同一波次的
+  >   多條 lane 同時實作、一起合併、一起過閘門、一起 commit。
+  > - **兩者的關係**：波次由同一份衝突規劃排出。批次要求每個 task 都兩兩不衝突，
+  >   波次只要求**不同 lane 之間**不衝突，同一條 lane 內的 task 可以互相依賴（由同一個
+  >   implementer 依序完成）。因此一個波次通常涵蓋好幾個批次的 task，波次數遠少於
+  >   批次數——每個波次都要過一輪審查、整合測試與 commit，這正是改用波次執行的原因。
+  >
+  > 例：T1→T2 相依（同屬 US1），T3 獨立（US2）。批次＝[T1, T3]、[T2] 共 2 批；
+  > 波次＝1 波（lane US1 依序做 T1、T2，lane US2 同時做 T3）。
 - **人為 review 閘門用導覽簡報，不用長文**：spec／clarify／plan／analyze 四個閘門由
   `sdd-brief-writer` 產製 `specs/<NNN>/brief/feature-brief.html`，orchestrator 以 Artifact 發布並把
   判斷點直接作為 AskUserQuestion 的題目。簡報是入版控的中間產物，spec.md 仍是唯一權威。

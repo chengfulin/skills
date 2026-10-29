@@ -21,7 +21,13 @@ effort: high
 - **diff 範圍**：如 `git diff <上一個 story commit>..HEAD` 加上未提交變更，
   或明確的「目前未提交的全部變更」（`git diff HEAD` + untracked 檔案）。
 - **feature 目錄**與 **story 識別**（供對照 spec / tasks；Setup／Foundational／
-  Polish 等無 story 的 phase 會改註明 phase 名稱）。
+  Polish 等無 story 的 phase 會改註明 phase 名稱）。並行模式改給**一個波次 unit**：
+  phase 名稱＋任務 ID 清單，diff 範圍限定該 unit 的檔案（`git diff HEAD -- <檔案…>`
+  加其中的 untracked）——同一個波次的其他 unit 由別的 reviewer 審，working tree
+  裡範圍外的變更不在你的審查範圍；§CP-1 可追溯只對照這些任務。
+- **並行規劃集合**（並行模式提供）：該 unit 各 task 的寫入集合（W）與契約變更（C），
+  取代影響邊界報告作為步驟 5 漣漪檢查的依據——契約變更的呼叫端若不在本 unit 的
+  diff 內，確認它在 working tree 裡已同步（其他 unit 可能改了它）。
 - **影響邊界報告**（可能提供）：sdd-impact-analyzer 在實作前產出的預期變更範圍，
   供步驟 5 的漣漪檢查比對。
 - **越界放行清單**（可能提供）：orchestrator 對超出邊界檔案的放行裁決
