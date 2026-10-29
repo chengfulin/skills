@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
-"""task 粒度全域並行規劃（implement-loop.md 步驟 0P 與完成報告使用）。
+"""task 粒度全域並行規劃與波次排程（implement-loop.md 步驟 0P、並行模式與完成報告使用）。
 
 子命令：
-  build  讀 tasks.md 與 analyzer 產出的逐 task 集合，兩兩判定衝突、分批，
-         寫出 parallel-plan.json，並把摘要合併進狀態檔 steps.implement.parallel_plan。
+  build  讀 tasks.md 與 analyzer 產出的逐 task 集合，兩兩判定衝突、分批、模擬波次並決定
+         執行模式，寫出 parallel-plan.json，並把摘要合併進狀態檔 steps.implement.parallel_plan。
   check  確認 parallel-plan.json 涵蓋 tasks.md 全部未勾選 task（續跑時判斷要不要重做）。
-  verify 完成報告用：以各 phase 的實際 commit 檔案核對集合涵蓋率，列出可能漏判。
+  next   並行模式：依目前勾選狀態排出下一個波次（每個 phase 一條 lane），寫入狀態檔
+         steps.implement.current_wave；已有進行中的波次則原樣印出（續跑）。
+  close  並行模式：波次 commit 前呼叫，waves_done 加 1 並移除 current_wave。
+  verify 完成報告用：以實際 commit 檔案核對集合涵蓋率，列出可能漏判。
+
+名詞（本 skill 自訂，詳見 README「名詞：批次與波次」）：
+  批次（batch） 規劃產物：依衝突關係分層，同批 task 兩兩不衝突。只用來衡量並行潛力，不照它執行。
+  波次（wave）  執行單位：每個 phase 一條 lane，lane 內的 task 由同一個 implementer 依序做、
+                可以互相依賴；不同 lane 兩兩不衝突，同時實作、一起過閘門、一個波次一個 commit。
+                由同一份衝突規劃排出，一個波次通常涵蓋多個批次的 task。
 
 集合檔格式（每個 task 一行，欄位以 " | " 分隔、清單以 "," 分隔，無則留空）：
   T014 | P=yes | W=a.ts,b/* | R=c.ts | Res=登錄點:x.ts | C=Sym@path | Dep=T013,US1 | Conf=高
@@ -16,6 +25,10 @@ from collections import Counter, defaultdict
 TASK_LINE = re.compile(r'^[-*] \[([ xX])\] (T\d+[a-z]?)\b(.*)$')
 PHASE_HEAD = re.compile(r'^## (Phase \d+[^\n]*)$')
 EXCLUDE_ACTUAL = re.compile(r'(^|/)(tasks\.md|\.sdd-workflow\.json|parallel-plan\.json)$')
+# 波次的上限：同時執行的 lane（implementer）數、單一 lane 累計的寫入檔數
+MAX_LANES, MAX_LANE_FILES = 3, 12
+# 自動採用並行模式的門檻：波次模擬的估計加速、分析基礎
+MIN_SPEEDUP = 1.5
 
 
 def phase_label(heading):
@@ -108,11 +121,58 @@ def conflict(a, b, A, B):
     return None
 
 
+def directed_preds(order, conflicts):
+    """衝突依執行順序定方向（前→後），回傳每個 task 必須先完成的 task 集合。"""
+    rank = {t: n for n, t in enumerate(order)}
+    preds = defaultdict(set)
+    for a, b in conflicts:
+        u, v = (a, b) if rank[a] < rank[b] else (b, a)
+        preds[v].add(u)
+    return preds
+
+
+def plan_wave(order, preds, phase, W, done):
+    """排出下一個波次：回傳 {phase: [task...]}。
+
+    每個 phase 一條 lane，lane 內的 task 由同一個 implementer 依序做，可以彼此相依；
+    task 進波次的條件是所有前驅已完成，或前驅在同一條 lane。不同 lane 的 task 因此
+    兩兩不衝突。lane 數上限 MAX_LANES，lane 累計寫入檔超過 MAX_LANE_FILES 就收口。
+    """
+    lanes, files, closed = {}, {}, set()
+    for t in order:
+        ph = phase[t]
+        if t in done or ph in closed or (ph not in lanes and len(lanes) >= MAX_LANES):
+            continue
+        if not all(p in done or p in lanes.get(ph, ()) for p in preds[t]):
+            continue
+        grown = files.get(ph, set()) | set(W[t])
+        if ph in lanes and len(grown) > MAX_LANE_FILES:
+            closed.add(ph)
+            continue
+        lanes.setdefault(ph, []).append(t)
+        files[ph] = grown
+    return lanes
+
+
+def simulate_waves(order, preds, phase, W):
+    """從零開始排完全部 task，回傳 (波次數, 估計成本＝各波次最長 lane 的 task 數總和)。"""
+    done, waves, cost = set(), 0, 0
+    while len(done) < len(order):
+        lanes = plan_wave(order, preds, phase, W, done)
+        if not lanes:
+            sys.exit('error=no_progress：排不出下一個波次（前驅關係有誤）')
+        waves += 1
+        cost += max(len(v) for v in lanes.values())
+        done.update(t for v in lanes.values() for t in v)
+    return waves, cost
+
+
 def write_plan(path, plan):
     """每個 task、每筆衝突、每個批次各一行，讓入版控的規劃檔可讀、diff 有意義。"""
     dump = lambda v: json.dumps(v, ensure_ascii=False)
     with open(path, 'w', encoding='utf-8') as f:
         f.write('{\n"summary": ' + dump(plan['summary']) + ',\n')
+        f.write('"order": ' + dump(plan['order']) + ',\n')
         f.write('"batches": [\n' + ',\n'.join(dump(b) for b in plan['batches']) + '\n],\n')
         f.write('"tasks": {\n' + ',\n'.join(f'{dump(k)}: {dump(v)}' for k, v in plan['tasks'].items()) + '\n},\n')
         f.write('"conflicts": [\n' + ',\n'.join(dump(c) for c in plan['conflicts']) + '\n],\n')
@@ -183,8 +243,19 @@ def build(args):
     p_pairs = [p for p in within if T[p[0]]['P'] and T[p[1]]['P']]
     hot = Counter(e for (t, e) in conf.values() if t in ('寫入', '相依'))
     basis = args.basis
+    phase_of = {t: T[t]['phase'] for t in ids}
+    waves, cost = simulate_waves(exec_order, directed_preds(exec_order, conf), phase_of,
+                                 {t: T[t]['W'] for t in ids})
+    est = len(ids) / cost
+    if basis != 'codegraph':
+        mode, reason = 'sequential', f'分析基礎為 {basis}，集合不足以作為並行實作的邊界'
+    elif est < MIN_SPEEDUP:
+        mode, reason = 'sequential', f'波次估計加速 {est:.1f}x 未達 {MIN_SPEEDUP}x'
+    else:
+        mode, reason = 'parallel', f'波次估計加速 {est:.1f}x，分析基礎 codegraph'
     summary = {
-        'advisory': True,
+        'mode': mode,
+        'mode_reason': reason,
         'granularity': 'task',
         'basis': basis,
         'tasks': len(ids),
@@ -195,6 +266,9 @@ def build(args):
         'by_type': dict(Counter(t for t, _ in conf.values())),
         'batches': len(batches),
         'max_width': max(len(v) for v in batches.values()),
+        'phases': len(set(phase_of.values())),
+        'waves': waves,
+        'est_speedup': round(est, 2),
         'critical_path': path,
         'low_conf': [t for t in ids if '低' in T[t]['Conf']],
         'P_marked_conflicts': [sum(p in conf for p in p_pairs), len(p_pairs)],
@@ -204,6 +278,7 @@ def build(args):
     }
     plan = {
         'summary': summary,
+        'order': exec_order,
         'batches': [batches[k] for k in sorted(batches)],
         'tasks': {t: {k: T[t][k] for k in ('phase', 'P', 'W', 'R', 'Res', 'C', 'Dep', 'Conf')} for t in ids},
         'conflicts': [{'a': a, 'b': b, 'type': t, 'evidence': e} for (a, b), (t, e) in conf.items()],
@@ -214,12 +289,13 @@ def build(args):
         st = json.load(open(args.state, encoding='utf-8'))
         impl = st.setdefault('steps', {}).setdefault('implement', {})
         impl['parallel_plan'] = {k: summary[k] for k in (
-            'advisory', 'granularity', 'basis', 'tasks', 'conflict_pairs', 'pairs', 'by_type',
-            'batches', 'max_width', 'low_conf', 'plan_file')}
-        with open(args.state, 'w', encoding='utf-8') as f:
-            json.dump(st, f, ensure_ascii=False, indent=2)
-            f.write('\n')
+            'mode', 'mode_reason', 'granularity', 'basis', 'tasks', 'conflict_pairs', 'pairs',
+            'by_type', 'batches', 'max_width', 'phases', 'waves', 'est_speedup', 'low_conf', 'plan_file')}
+        impl.pop('current_wave', None)
+        save_state(args.state, st)
     s = summary
+    print(f"mode={s['mode']}（{s['mode_reason']}）")
+    print(f"waves={s['waves']} phases={s['phases']} est_speedup={s['est_speedup']}x")
     print(f"tasks={s['tasks']} batches={s['batches']} speedup={s['tasks'] / s['batches']:.1f}x max_width={s['max_width']}")
     print(f"conflict_pairs={s['conflict_pairs']}/{s['pairs']} within_phase={s['within_phase'][0]}/{s['within_phase'][1]} "
           f"cross_phase={s['cross_phase'][0]}/{s['cross_phase'][1]} by_type={json.dumps(s['by_type'], ensure_ascii=False)}")
@@ -232,20 +308,113 @@ def build(args):
         print(f"cyclic={','.join(cyclic)}")
 
 
+def save_state(path, st):
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(st, f, ensure_ascii=False, indent=2)
+        f.write('\n')
+
+
 def check(args):
     if not os.path.exists(args.plan):
         print('plan=missing')
         sys.exit(1)
-    planned = set(json.load(open(args.plan, encoding='utf-8'))['tasks'])
+    plan = json.load(open(args.plan, encoding='utf-8'))
+    if 'order' not in plan:  # 導入並行實作前產出的規劃檔，缺執行順序，無法排波次
+        print('plan=stale 規劃檔版本過舊')
+        sys.exit(1)
+    planned = set(plan['tasks'])
     pending = [i for i, _, done, _ in parse_tasks(args.tasks) if not done]
     lack = [i for i in pending if i not in planned]
     print('plan=ok' if not lack else 'plan=stale ' + ','.join(lack))
     sys.exit(0 if not lack else 1)
 
 
+def next_wave(args):
+    st = json.load(open(args.state, encoding='utf-8'))
+    impl = st.setdefault('steps', {}).setdefault('implement', {})
+    cur = impl.get('current_wave')
+    if cur:  # 續跑：波次已排定（可能已派遣或已合併），不重排
+        print(f"wave={cur['k']} resume=yes completes={','.join(cur['completes']) or '無'}")
+        for u, v in cur['units'].items():
+            print(f"{u} | {v['phase']} | {','.join(v['tasks'])} | W={','.join(v['W'])}")
+        return
+    plan = json.load(open(args.plan, encoding='utf-8'))
+    T = plan['tasks']
+    status = parse_tasks(args.tasks)
+    done = {i for i, _, d, _ in status if d}
+    lack = [i for i, _, d, _ in status if not d and i not in T]
+    if lack:
+        print('error=stale_plan ' + ','.join(lack))
+        sys.exit(3)
+    pending = [t for t in plan['order'] if t not in done]
+    if not pending:
+        print('wave=none')
+        return
+    preds = directed_preds(plan['order'], [(c['a'], c['b']) for c in plan['conflicts']])
+    lanes = plan_wave(plan['order'], preds, {t: v['phase'] for t, v in T.items()},
+                      {t: v['W'] for t, v in T.items()}, done)
+    if not lanes:
+        print('error=no_progress：排不出下一個波次（前驅關係有誤）')
+        sys.exit(3)
+    picked = {t for v in lanes.values() for t in v}
+    completes = [ph for ph in lanes if all(t in picked for t in pending if T[t]['phase'] == ph)]
+    units = {}
+    for n, (ph, ts) in enumerate(lanes.items(), 1):
+        W = list(dict.fromkeys(x for t in ts for x in T[t]['W']))
+        units[f'u{n}'] = {'phase': ph, 'tasks': ts, 'W': W}
+    k = impl.get('waves_done', 0) + 1
+    impl['current_wave'] = {'k': k, 'units': units, 'completes': completes}
+    save_state(args.state, st)
+    print(f"wave={k} units={len(units)} completes={','.join(completes) or '無'}")
+    for u, v in units.items():
+        print(f"{u} | {v['phase']} | {','.join(v['tasks'])} | W={','.join(v['W'])}")
+
+
+def close_wave(args):
+    st = json.load(open(args.state, encoding='utf-8'))
+    impl = st['steps']['implement']
+    if not impl.pop('current_wave', None):
+        print('error=no_current_wave')
+        sys.exit(1)
+    impl['waves_done'] = impl.get('waves_done', 0) + 1
+    save_state(args.state, st)
+    print(f"waves_done={impl['waves_done']}")
+
+
 def git(root, *a):
     return subprocess.run(['git', '-c', 'core.quotepath=off', '-C', root, *a],
                           capture_output=True, text=True, check=True).stdout
+
+
+def verify_waves(args, plan, rng):
+    """並行模式：每個波次 commit 的 body 有 tasks: 行，可逐波次核對集合涵蓋率。"""
+    T, nnn = plan['tasks'], args.feature
+    log = git(args.root, 'log', rng, '--reverse', '--format=%x01%H%x00%B', f'--grep=（{nnn}）', '--fixed-strings')
+    waves = []
+    for rec in log.split('\x01')[1:]:
+        sha, _, body = rec.partition('\x00')
+        if '實作波次' not in body.split('\n', 1)[0]:
+            continue
+        m = re.search(r'^tasks:\s*(.+)$', body, re.M)
+        tasks = [t for t in split_list(m.group(1)) if t in T] if m else []
+        files = git(args.root, 'show', '--name-only', '--format=', sha.strip())
+        waves.append((body.split('\n', 1)[0], tasks, {f for f in files.split() if f and not EXCLUDE_ACTUAL.search(f)}))
+    s = plan['summary']
+    print(f"tasks={len(T)} waves={len(waves)}（預估 {s.get('waves')}）est_speedup={s.get('est_speedup')}x "
+          f"conflict_pairs={s['conflict_pairs']}/{s['pairs']}")
+    total = unc_total = risky_total = 0
+    for n, (subject, tasks, actual) in enumerate(waves):
+        W = [x for t in tasks for x in T[t]['W']]
+        others = [x for t in T if t not in tasks for x in T[t]['W'] + T[t]['R']]
+        other_act = set().union(*[w[2] for i, w in enumerate(waves) if i != n])
+        unc = sorted(f for f in actual if not any(match(x, f) for x in W))
+        risky = [f for f in unc if f in other_act or any(match(x, f) for x in others)]
+        total, unc_total, risky_total = total + len(actual), unc_total + len(unc), risky_total + len(risky)
+        if not tasks:
+            print(f"{subject}: body 缺 tasks: 行，無法核對")
+        elif risky:
+            print(f"{subject}: 實際 {len(actual)} 檔，集合未涵蓋 {len(unc)}，可能漏判 {len(risky)}：{', '.join(risky[:6])}")
+    print(f'coverage: 實際變更 {total} 檔，集合未涵蓋 {unc_total}，可能漏判（他波次也碰）{risky_total}')
 
 
 def verify(args):
@@ -254,6 +423,8 @@ def verify(args):
     nnn = args.feature
     base = git(args.root, 'log', '--format=%H', '-1', f'--grep=完成並行規劃（{nnn}）').strip()
     rng = f'{base}..HEAD' if base else 'HEAD'
+    if plan['summary'].get('mode') == 'parallel':
+        return verify_waves(args, plan, rng)
     grep = {'Setup': f'完成 Setup（{nnn}）', 'Foundational': f'完成 Foundational（{nnn}）',
             'Polish': '完成功能實作（implement）'}
     phases = sorted({t['phase'] for t in T.values()}, key=lambda p: min(k for k, v in T.items() if v['phase'] == p))
@@ -297,12 +468,18 @@ def main():
     c = sub.add_parser('check')
     c.add_argument('--tasks', required=True)
     c.add_argument('--plan', required=True)
+    n = sub.add_parser('next')
+    n.add_argument('--tasks', required=True)
+    n.add_argument('--plan', required=True)
+    n.add_argument('--state', required=True)
+    cl = sub.add_parser('close')
+    cl.add_argument('--state', required=True)
     v = sub.add_parser('verify')
     v.add_argument('--plan', required=True)
     v.add_argument('--root', required=True)
     v.add_argument('--feature', required=True, help='feature 編號 NNN')
     a = ap.parse_args()
-    {'build': build, 'check': check, 'verify': verify}[a.cmd](a)
+    {'build': build, 'check': check, 'next': next_wave, 'close': close_wave, 'verify': verify}[a.cmd](a)
 
 
 if __name__ == '__main__':

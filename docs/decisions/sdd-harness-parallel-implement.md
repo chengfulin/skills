@@ -1,7 +1,8 @@
 # 決策紀錄：sdd-harness 實作階段的並行化
 
-- 日期：2026-10-21（同日修訂：第二階段改為 task 粒度全域規劃，見文末「修訂」）
-- 狀態：第一階段已採行；第二階段已改版為 task 粒度；第三階段暫緩，待觀察資料決定
+- 日期：2026-10-21（同日修訂：第二階段改為 task 粒度全域規劃，見「修訂」）；
+  2026-10-29 導入第三階段（見文末「第三階段導入」）
+- 狀態：三個階段皆已採行；第三階段以「波次」執行，依門檻自動啟用
 - 影響範圍：`skills/sdd-harness/`（步驟 8 實作迴圈）
 
 ## 背景
@@ -203,3 +204,54 @@ commit，集合涵蓋率 77%（實驗 C 為 71%）。驗證過程修正三處：
   如實寫降級，主對話據此取 `--basis`。
 - 兩個 analyzer 對同一對 task 給出相反的相依方向，形成環 → 環上的 task 比照低信心，
   與其他所有 task 衝突。
+
+## 第三階段導入：波次並行實作（2026-10-29）
+
+### 定案的選擇
+
+| 問題 | 決定 | 理由 |
+|------|------|------|
+| 並行範圍 | 全域 task 排程，不限 phase 內 | 實驗 C：全域 3.3×，phase 內只有 1.9× |
+| 隔離方式 | 每個 unit 一個 git worktree | 測試互不干擾、diff 歸屬清楚；被 gitignore 的單檔複製、依賴目錄 symlink |
+| 啟用方式 | 依門檻自動：codegraph 分析且波次估計加速 ≥1.5× | greenfield／降級 grep 的集合不夠可靠，不能當實作邊界 |
+| 同時上限 | 3 個 implementer | 在 token、合併成本與加速之間取平衡 |
+
+### 執行單位改為「波次」而非 0P 的「批次」
+
+0P 依衝突分層的批次數通常遠多於 phase 數（實驗 C 驗證時 133 task 排成 34 批），每批都過
+reviewer、整合測試與 commit，閘門開銷會吃掉加速。因此執行時另排**波次**：
+
+- 每個 phase 一條 lane，一條 lane 交給一個 implementer，依序做一串 task——lane 內的
+  task 可以彼此相依（同一個 context 依序完成），不需要兩兩不衝突。
+- task 進入波次的條件：所有前驅（依執行順序定向的衝突對象）已完成，或在同一條 lane。
+  不同 lane 的 task 因此兩兩不衝突。
+- lane 數上限 3；單一 lane 累計寫入超過 12 個檔就收口（沿用依序模式分批派遣的經驗值，
+  一個 implementer 吃下整個大 story 實測約 210k context）。
+- 估計加速＝task 數 ÷ 各波次最長 lane 的 task 數總和；`task-plan.py build` 模擬全程
+  波次算出，`next` 依當下勾選狀態排出下一個波次，合併衝突退回的 task 自然排進下一波。
+
+### 閘門重新設計
+
+- **0P 的集合就是實作邊界**，並行模式不另派 boundary 模式的 analyzer。
+- 漏判由三道關卡抓：合併撞檔（`git apply --check` 失敗＝該 unit 退回下一波重做）、
+  逐 unit 越界檢查（W 之外的檔案若也在其他 unit 的範圍＝撞到別條 lane，不放行）、
+  合併後全量整合測試（抓文字不衝突、合起來才壞的語意衝突）。
+- reviewer 每個 unit 一個、validator 只在 story 的最後一個 task 完成的波次派，兩者在同一
+  則訊息並行；Setup／Foundational／Polish 不派 validator，由整合測試與收尾的 `all` 回歸涵蓋。
+- 一個波次一個 commit：`feat(sdd): 實作波次 <k>（NNN）`，body 的 `tasks:` 行讓完成報告
+  能逐波次核對集合涵蓋率（依序模式只能逐 phase 核對）。
+- tasks.md 仍由主對話單一寫入，在合併後勾選；`wave-worktree.sh merge` 不套用 feature
+  目錄的變更並列為越界。
+
+### 安全閥
+
+- 同一 feature 累計 2 個波次出現撞檔（合併衝突或撞到別條 lane）→ 建議降級回依序模式。
+- 狀態檔 `current_wave` 只在波次進行中存在（commit 前由 `task-plan.py close` 移除），
+  續跑時據此與 `wave-worktree.sh status` 判斷從哪一步接手。
+
+### 待觀察
+
+- 1.5× 門檻與 lane 上限 3、12 檔是依實驗 C 推估的起始值，需以實際 feature 的完成報告
+  （實際波次數對照預估、撞檔次數、涵蓋率）校準。
+- worktree 只帶入 `node_modules`／`.venv`／`venv` 與 1MB 以下的被 ignore 單檔；其他需要
+  建置產物或大型本機資料的專案，測試可能在 worktree 內失敗，屆時再補規則。

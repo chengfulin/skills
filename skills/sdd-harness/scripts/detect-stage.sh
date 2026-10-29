@@ -184,6 +184,10 @@ DONE_TASKS=$(grep -cE '^[-*] \[[Xx]\]' "$FEATURE_DIR/tasks.md" 2>/dev/null || tr
 OPEN_TASKS=$(grep -cE '^[-*] \[ \]' "$FEATURE_DIR/tasks.md" 2>/dev/null || true)
 IMPL_STATE=$(json_get "$STATE" steps.implement.done)
 echo "tasks_done=${DONE_TASKS:-0} tasks_open=${OPEN_TASKS:-0} implement_state=${IMPL_STATE:-unset}"
+# 並行規劃的執行模式與進行中的波次（implement-loop.md；未規劃時為 unset／none）
+IMPL_MODE=$(json_get "$STATE" steps.implement.parallel_plan.mode)
+CUR_WAVE=$(json_get "$STATE" steps.implement.current_wave.k)
+echo "implement_mode=${IMPL_MODE:-unset} current_wave=${CUR_WAVE:-none}"
 if [ "${OPEN_TASKS:-0}" -gt 0 ] || [ "$IMPL_STATE" != "true" ]; then
     echo "detected_stage=implement"
     exit 0

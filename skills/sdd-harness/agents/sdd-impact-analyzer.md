@@ -1,6 +1,6 @@
 ---
 name: sdd-impact-analyzer
-description: 在 implement 階段實作某 user story 之前分析變更影響範圍：以 codegraph 索引（未安裝則降級為 grep）核對該 story 任務將新增/修改的檔案與 symbol、依賴的既有 symbol、受影響的呼叫端與測試，產出「影響邊界報告」供實作約束與越界檢查；plan 模式改為逐 task 產出「並行規劃集合」（寫入／讀取集合、共用資源、契約變更、task 相依、信心）寫入指定檔案，供腳本做 task 間衝突判定與全域分批。當 SDD 流程 implement 階段每個 user story 開工前、Setup 開工前的並行規劃、或需要獨立評估一批變更的影響範圍時使用。
+description: 在 implement 階段實作某 user story 之前分析變更影響範圍：以 codegraph 索引（未安裝則降級為 grep）核對該 story 任務將新增/修改的檔案與 symbol、依賴的既有 symbol、受影響的呼叫端與測試，產出「影響邊界報告」供實作約束與越界檢查；plan 模式改為逐 task 產出「並行規劃集合」（寫入／讀取集合、共用資源、契約變更、task 相依、信心）寫入指定檔案，供腳本做 task 間衝突判定、全域分批與並行模式的波次排程（寫入集合同時是並行實作的邊界）。當 SDD 流程 implement 階段依序模式每個 user story 開工前、Setup 開工前的並行規劃、或需要獨立評估一批變更的影響範圍時使用。
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---
@@ -100,7 +100,8 @@ data-model.md、`contracts/` 推得；既有檔案與 symbol 照上方步驟 2�
 逐 task 列出：
 
 - **W（寫入）**：會新增或修改的檔案，含任務沒寫、但索引顯示必須同步改的呼叫端與
-  測試（隱含影響）。檔名未定的新檔寫目錄加 `*`（如 `backend/test/seed/*`）——
+  測試（隱含影響）。並行模式下 W 就是 implementer 的**實作邊界**，也是判斷能否與
+  其他 task 同時實作的依據——漏列的檔案會在合併時撞檔或被判越界，寧可多列。檔名未定的新檔寫目錄加 `*`（如 `backend/test/seed/*`）——
   腳本把它和同目錄任何寫入都視為衝突，所以檔名能從 plan.md 推得就寫完整檔名。
   只在執行期暫改、驗完還原的檔案（突變驗證）也算寫入。
 - **R（讀取）**：會呼叫、繼承、注入、匯入或拿來比對的檔案，**含其他 task（同

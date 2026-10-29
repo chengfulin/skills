@@ -1,8 +1,8 @@
-# 步驟 8 實作迴圈（/speckit.implement，逐 story 閘門）
+# 步驟 8 實作迴圈（/speckit.implement，依序模式逐 phase／並行模式逐波次）
 
 僅由 SKILL.md 步驟 8 進入時讀取，**全程照本文件執行**；本文件是步驟 8 執行細節
-（索引準備、測試工具前置、tasks.md 勾選、並行規劃、逐 phase 迴圈、越界放行、
-story 收尾 checklist）的唯一版本。完成準則與不變量在 workflow-stages.md「8 實作」節；入口訊號與 8R 重規劃在
+（索引準備、測試工具前置、tasks.md 勾選、並行規劃與模式判定、依序模式的逐 phase
+迴圈、並行模式的波次迴圈、越界放行、收尾 checklist）的唯一版本。完成準則與不變量在 workflow-stages.md「8 實作」節；入口訊號與 8R 重規劃在
 SKILL.md 步驟 8R 與 replan.md；「通用規則 N」「模板」指 SKILL.md 的通用規則。
 
 **進入本階段先做索引準備**（codegraph 可用時；不可用則整段跳過，影響分析走降級）：
@@ -33,13 +33,14 @@ ID；每次 implementer 回報（含分批、修正迴圈、失敗續作）後�
 
 勾選在閘門前就寫入，讓中斷後續跑看得到進度；story 是否完成仍以狀態檔旗標為準。
 
-**0P. 並行規劃（task 粒度、全域；觀察期：只產出批次建議，執行仍逐 phase 依序）**：
+**0P. 並行規劃與模式判定（task 粒度、全域）**：
 索引準備與測試工具前置之後、Setup 開工之前執行。單位是 **task**，範圍是 tasks.md
 **全部未勾選的 task**（Setup／Foundational／各 story／Polish 一起排），只算 task
 之間的相依——phase 級的整體宣告（「Foundational 阻擋所有 story」「US2 相依 US1」）
-不構成衝突，analyzer 逐 task 找出真正需要的前置。未勾選 task 少於 2 個，或
-`python3 $SKILL_DIR/scripts/task-plan.py check --tasks <FEATURE_DIR>/tasks.md --plan
-<FEATURE_DIR>/parallel-plan.json` 印出 `plan=ok` → 跳過。
+不構成衝突，analyzer 逐 task 找出真正需要的前置。未勾選 task 少於 2 個 → 跳過，
+走依序模式；`python3 $SKILL_DIR/scripts/task-plan.py check --tasks <FEATURE_DIR>/tasks.md --plan
+<FEATURE_DIR>/parallel-plan.json` 印出 `plan=ok` → 跳過，沿用狀態檔
+`parallel_plan.mode`。
    a. **切範圍**：每個 phase 一個 analyzer；未勾選 task 超過 20 個的 phase，依
       `###` 小節或任務 ID 切成每段 ≤15 個（同一檔案的連號任務放同一段）。
    b. 建空目錄 `${TMPDIR:-/tmp}/sdd-plan-<NNN>/`（已存在先清空），在**同一則訊息**
@@ -66,21 +67,34 @@ ID；每次 implementer 回報（含分批、修正迴圈、失敗續作）後�
       分批：先依明文 Dep 做拓撲排序（同層依 tasks.md 順序；成環的 task 比照信心
       低，與其他所有 task 衝突），衝突再依此順序定方向；
       task 的批次＝1＋（衝突的前序 task 的最大批次）。同批＝判定可同時開工。
+      **模式判定**（腳本輸出 `mode=`）：以每個 phase 一條 lane 模擬波次（見下方
+      「並行模式」），估計加速＝task 數 ÷ 各波次最長 lane 的 task 數總和；分析基礎
+      為 `codegraph` 且估計加速 ≥1.5× → `parallel`，否則 `sequential`（原因寫在
+      `mode_reason`）。greenfield／降級 grep 的集合不夠可靠，不能當並行實作的邊界。
    d. 腳本已把摘要寫入狀態檔 `steps.implement.parallel_plan`（schema 見
       workflow-stages.md），完整規劃在 `parallel-plan.json`。立即
       `git add -A && git commit -m "chore(sdd): 完成並行規劃（NNN）"`——避免規劃
       檔混進 Setup 的越界檢查。
-   e. 向使用者回報（≤15 行，取自腳本輸出）：task 數／批次數／理論加速、衝突比例與
-      類型分布、關鍵路徑與前 3 個熱點檔、低信心 task；另列 **tasks.md 品質訊號**
+   e. 向使用者回報（≤15 行，取自腳本輸出）：**採用的模式與原因**、波次數對照
+      phase 數與估計加速、衝突比例與類型分布、關鍵路徑與前 3 個熱點檔、低信心
+      task；另列 **tasks.md 品質訊號**
       ——`order_conflicts`（task 依賴排在後面的 task）、`cyclic`（明文相依成環，
       已比照低信心處理）、`P_marked_conflicts`（標
       `[P]` 卻被判衝突的 pair 數）與 analyzer 指出的「沒有 task 負責的必要改動」，
       建議使用者是否回 tasks.md 修正（不設閘門，修正走 8R 或下次 feature 改善）。
-      註明「目前仍依 tasks.md 逐 phase 執行，本結果供評估並行實作用」。
-   之後照下方步驟 1 起逐 phase 執行；0P 的集合**不取代**步驟 2a 的邊界報告（前面
-   phase commit 後程式碼已變，邊界報告必須重做）。
+      使用者要求改用另一個模式 → 改寫 `parallel_plan.mode` 並把 `mode_reason` 記為
+      「使用者指定：<原因>」，隨下一個 commit 入版控；在 `basis` 不是 codegraph 時
+      指定並行，先提醒越界與撞檔會變多。
 
-對 tasks.md 的每個 phase 依序（細節見 workflow-stages.md 的階段 8）：
+**依 `steps.implement.parallel_plan.mode` 進入對應模式**：`parallel` → 下方「並行
+模式」；`sequential` 或沒有 `parallel_plan` → 下方「依序模式」。
+
+## 依序模式（逐 phase）
+
+0P 的集合**不取代**步驟 2a 的邊界報告（前面 phase commit 後程式碼已變，邊界報告
+必須重做）。對 tasks.md 的每個 phase 依序（細節見 workflow-stages.md 的階段 8；
+從並行模式降級而來時，已全數勾選的 phase 跳過，部分勾選的 phase 只派未勾選的
+task）：
 
 1. **Setup / Foundational**：派 `sdd-implementer`（依模板：專案根絕對路徑 +
    phase 名稱 + feature 目錄 + speckit-implement SKILL.md 路徑；邊界＝該 phase
@@ -150,3 +164,96 @@ ID；每次 implementer 回報（含分批、修正迴圈、失敗續作）後�
    雙向閉合，兩個方向的複核均計入同一 3 輪上限）→
    `steps.implement.done=true` → `auto-commit.sh after_implement` → commit 驗證 →
    最終 `codegraph sync`。
+
+## 並行模式（波次）
+
+單位是**波次**：每個 phase 一條 lane，一條 lane 交給一個 implementer，依序做一串
+task（lane 內的 task 可以彼此相依）；不同 lane 的 task 由 `task-plan.py` 保證兩兩
+不衝突，各在自己的 git worktree 同時實作，再合併回專案根一起過閘門、一個波次一個
+commit。同時最多 3 條 lane；一條 lane 累計寫入超過 12 個檔就收口，剩下的留到下一個
+波次。**0P 的集合就是實作邊界**——不另派 boundary 模式的 analyzer；集合漏判由合併
+撞檔、越界檢查與整合測試三道關卡抓。
+
+W1. **排波次**：
+    ```bash
+    python3 $SKILL_DIR/scripts/task-plan.py next --tasks <FEATURE_DIR>/tasks.md \
+      --plan <FEATURE_DIR>/parallel-plan.json --state <FEATURE_DIR>/.sdd-workflow.json
+    ```
+    輸出 `wave=<k>`、`completes=`（本波次做完就全數完成的 phase），以及每個 unit
+    一行 `u<j> | <phase> | <task ID，依執行順序> | W=<寫入集合>`；腳本同時把波次寫入
+    狀態檔 `current_wave`（續跑時原樣印出、標 `resume=yes`，不重排）。
+    `wave=none` → 跳到「並行模式收尾」；`error=stale_plan` → 回 0P 只規劃剩下的 task。
+W2. **派遣**：
+    - **只有 1 個 unit** → 不建 worktree，在專案根派 `sdd-implementer`（依模板：
+      專案根絕對路徑 + phase + 任務 ID 清單 + feature 目錄 + speckit-implement
+      SKILL.md 路徑；邊界＝該 unit 的 W），直接進 W4。
+    - **多個 unit** → `bash $SKILL_DIR/scripts/wave-worktree.sh add <專案根> <NNN> <k> u1 u2 …`
+      （每個 unit 從 HEAD 建一個 worktree，被 gitignore 的單檔如 `.env`、
+      `.specify/feature.json` 會複製進去，`node_modules`／`.venv` 以 symlink 共用）；
+      在**同一則訊息**並行派 `sdd-implementer`，每個 unit 一個（依模板：專案根
+      絕對路徑 + **工作目錄＝該 unit 的 worktree 路徑** + phase + 任務 ID 清單（照
+      W1 的順序）+ feature 目錄 + 專案根下的 speckit-implement SKILL.md 路徑；邊界＝
+      該 unit 的 W）。
+    - 任一 unit 回報「受阻」或「越界候選」→ 先解決（同依序模式 2b），再對**同一個
+      worktree** 重派續作。全部 unit 有結論後才合併；決定放棄的任務不勾，下一個
+      波次會重新排到。
+W3. **合併**（多 unit 波次）：
+    `bash $SKILL_DIR/scripts/wave-worktree.sh merge <專案根> <NNN> <k> <FEATURE_DIR> u1 u2 …`
+    依序把各 unit 的變更套回專案根（不 commit），逐 unit 判讀：
+    - `status=merged`：`files=` 是該 unit 的實際變更檔，W5 越界檢查用；`forbidden=`
+      非空＝implementer 改了 feature 目錄（已排除、不套用），記為越界並追問。
+    - `status=conflict`：與先合併的 unit 撞檔＝規劃漏判。該 unit **不套用、不勾選**，
+      下一個波次會在新基礎上重做；記入波次 commit body 的「合併衝突退回」。
+    - `status=empty`：沒有變更。回報卻說有完成任務 → 視同回報無法判讀
+      （workflow-stages.md「錯誤處理細則」）。
+W4. **勾選**：依各 unit 回報勾選（規則同上方「tasks.md 勾選」，核對範圍＝該 unit
+    的任務清單；`conflict` 的 unit 不勾）。
+W5. **越界檢查（逐 unit）**：tasks.md 的 diff 只有本波次的勾選；該 unit 的 `files=`
+    （單 unit 波次＝`git diff HEAD --name-only` 加 untracked）對照該 unit 的 W（`目錄/*`
+    涵蓋同目錄任何檔）。W 之外的檔案逐一處理：
+    - 也在本波次**其他 unit** 的 `files=`、W 或 R 裡 → **撞到別條 lane**，不放行：
+      停下回報使用者，建議還原該檔、把相關 task 的勾選撤回留到下一個波次重做。
+    - 否則同依序模式 2c：對得到該 unit 的任務 ID → 放行並記入越界放行清單；對不到
+      → 停止實作，回報使用者。
+W6. **整合測試**：以 plan.md 選定的測試指令在專案根跑全量測試，輸出寫入
+    `${TMPDIR:-/tmp}/sdd-wave-<NNN>-<k>.log`，只讀摘要（`tail -30`）。各 worktree
+    單獨綠燈不代表合起來沒壞（例如一條 lane 改了建構子簽名、另一條 lane 的新測試用
+    舊簽名），這一步抓合併後才出現的語意衝突。失敗 → 派 `sdd-implementer`（專案根、
+    不建 worktree；附失敗摘要與 log 路徑；邊界＝本波次全部 unit 的 W）修正，計入
+    W8 的 3 輪上限。
+W7. **閘門**（在**同一則訊息**並行派）：
+    - `sdd-code-reviewer`，每個 unit 一個（依模板；diff 範圍＝`git diff HEAD --
+      <該 unit 的 files>` 加其中的 untracked；註明 phase 與任務 ID；附件＝該 unit 各
+      task 在 parallel-plan.json 的 W 與 C（契約變更）、越界放行清單）→ 需 APPROVE。
+    - `sdd-feature-validator`，`completes=` 中每個 user story 一個（story ID）→ 需
+      PASS。Setup／Foundational／Polish 不派（由 W6 與收尾的 `all` 回歸涵蓋）。
+W8. **修正迴圈**：同依序模式 2f（上限 3 輪），差別：修正一律在專案根進行；修正後重跑
+    W5 越界檢查與 W6 整合測試；動到產品程式碼 → 對修正涉及的 unit 重派 reviewer
+    覆審，並對 `completes=` 的 story 重派 validator 回歸。
+W9. **收尾**：依下方「波次收尾 checklist」逐項核對後 commit，回到 W1。
+
+**波次收尾 checklist**（每個波次收尾前回到本節重讀，逐項打勾）：
+- [ ] tasks.md：新增的 `[X]` 恰為本波次各 unit 回報完成的任務
+- [ ] 最後一輪整合測試全綠；reviewer 全數 APPROVE；`completes=` 的 story validator 全數 PASS
+- [ ] 有修正過 → 越界檢查與整合測試已在最後一輪修正後重跑
+- [ ] `completes=` 中的 story 已更新 `stories.USk` 旗標（validated/reviewed/committed）
+- [ ] `python3 $SKILL_DIR/scripts/task-plan.py close --state <FEATURE_DIR>/.sdd-workflow.json`
+      （waves_done 加 1、移除 current_wave）——必須在 commit 之前
+- [ ] `git add -A && git commit`，訊息 `feat(sdd): 實作波次 <k>（NNN）`，body 逐行：
+      `tasks: <本波次勾選的 ID，逗號分隔>`（完成報告靠它核對涵蓋率）、每個完成的
+      story 一行 `完成 USk：<story 標題>`、有的話加 `越界放行：<檔案> → <任務 ID>`、
+      `合併衝突退回：<任務 ID>` 與 `撞到別條 lane：<檔案>`（完成報告據此統計漏判）
+- [ ] `git status --porcelain` 為空
+- [ ] `bash $SKILL_DIR/scripts/wave-worktree.sh clean <專案根> <NNN>`（單 unit 波次也跑，無害）
+- [ ] `codegraph sync`（codegraph 可用時）
+
+**降級回依序模式**：同一 feature 累計 2 個波次出現 W3 `conflict` 或 W5「撞到別條
+lane」→ 集合對這個專案不夠可靠。AskUserQuestion 建議改回依序模式；同意 → 先讓
+當下的波次照常收尾，再把 `parallel_plan.mode` 改為 `sequential`、`mode_reason` 記
+原因，隨下一個 commit 入版控，剩下的 task 照「依序模式」執行。
+
+**並行模式收尾**（W1 印出 `wave=none`）：派 `sdd-feature-validator`（依模板，story
+ID＝`all`：全 feature 回歸）→ 需 PASS（FAIL → 通用規則 4 修正迴圈，上限 3 輪；
+修正動到產品程式碼，PASS 後須再派 reviewer 覆審該批修正，雙向閉合同依序模式的
+Polish）→ `steps.implement.done=true` → `auto-commit.sh after_implement` →
+commit 驗證 → 最終 `codegraph sync`。

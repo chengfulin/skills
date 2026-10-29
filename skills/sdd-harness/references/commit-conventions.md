@@ -1,7 +1,9 @@
 # Commit 慣例（sdd-harness 各階段）
 
 格式：Angular 慣例 `type(scope): 主旨`；主旨繁體中文、祈使語氣、不加句號。
-scope 固定 `sdd`；story commit 在主旨尾附 `（NNN, USk）` 供追溯（§CP-1）。
+scope 固定 `sdd`；story commit 在主旨尾附 `（NNN, USk）` 供追溯（§CP-1）。並行模式
+一個波次含多個 story 的 task，改由 body 的 `tasks:` 與 `完成 USk：` 行追溯
+（`git log --grep '完成 USk：'` 找完成該 story 的波次）。
 
 ## 階段 commit（auto-commit 事件 → 訊息）
 
@@ -25,7 +27,8 @@ scope 固定 `sdd`；story commit 在主旨尾附 `（NNN, USk）` 供追溯（�
 |------|------|------|
 | Setup / Foundational phase 完成 | `chore(sdd): 完成 <phase>（NNN）` | `chore(sdd): 完成 Setup（001）` |
 | 並行規劃寫入 parallel-plan.json 與狀態檔（implement-loop.md 步驟 0P）| `chore(sdd): 完成並行規劃（NNN）` | `chore(sdd): 完成並行規劃（001）` |
-| User story 通過驗證與審查 | `feat(sdd): 實作 <story 標題>（NNN, USk）` | `feat(sdd): 實作檔案大小排序（001, US1）` |
+| User story 通過驗證與審查（依序模式） | `feat(sdd): 實作 <story 標題>（NNN, USk）` | `feat(sdd): 實作檔案大小排序（001, US1）` |
+| 波次通過整合測試、審查與驗收（並行模式） | `feat(sdd): 實作波次 <k>（NNN）`＋body（格式見 implement-loop.md 波次收尾 checklist） | `feat(sdd): 實作波次 3（001）` |
 | 驗證/審查後的修正（若單獨 commit）| `fix(sdd): 修正 <問題摘要>（NNN, USk）` | — |
 | auto-commit 靜默跳過時的補救 | 沿用該事件在上表的訊息 | — |
 
@@ -58,5 +61,5 @@ specify 之後 spec.md 沒出現屬**流程錯誤**（回步驟 3 重跑），�
 - 不使用 `--amend`、不 rebase、不 push（推送由使用者決定）。
 - 不在 commit 訊息使用 emoji。
 - **一個 commit 點恰好一個 commit**（階段 1 恰一個收尾 commit、階段 8 的
-  逐 phase／story 多 commit 是既定設計，不算違反）；發現前一個 commit 點漏了，
+  逐 phase／story／波次多 commit 是既定設計，不算違反）；發現前一個 commit 點漏了，
   先補上再開始新階段（不要把不同 commit 點混進同一個 commit）。
