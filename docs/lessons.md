@@ -48,97 +48,6 @@
   判斷點涵蓋原版所有後續裁決。
 - 狀態：未升格（屬實驗方法，不屬任何 skill 的規則）
 
-## L7：並行波次的整合測試把「預期紅燈」當失敗（2026-10-29）
-- 情境：首次以 sdd-harness 並行模式端到端跑完一個前端 feature（強制並行，19 個
-  波次）。同一波次裡有測試先行（TDD red）的 task，對應實作排在後面的波次。
-- 錯誤行為：W6 整合測試沒有「預期紅燈」的概念，這種波次必定判紅。靜態型別語言
-  的紅燈測試還會讓型別檢查失敗，連帶 build 失敗，E2E 測試的 webServer 起不來，
-  整套 E2E 回歸都跑不了；只能繞道（跳過型別檢查直接打包、手動起 preview server）。
-- 正確行為：tasks.md 標了測試先行的 task，W6 要先列出本波次預期為紅的測試檔，
-  判定時只把「非預期」的失敗算紅；E2E 的 build 指令要能排除尚未有實作的測試檔
-  （或拆出不跑型別檢查的 build），不讓預期紅燈擋住其他回歸。
-- 證據：19 個波次中多次遇到；每次都要人工判定哪些紅燈屬預期，並以替代指令跑 E2E。
-- 狀態：未升格
-
-## L8：worktree 裡安裝的依賴不會合併回專案根（2026-10-29）
-- 情境：同一實驗，首波 lane 在自己的 worktree 執行套件安裝（被 gitignore 的依賴
-  目錄）。
-- 錯誤行為：合併只帶回版控內的檔案，專案根沒有依賴目錄；W6 在專案根跑整合測試
-  直接失敗，要先手動安裝依賴。
-- 正確行為：合併後若 lockfile 有變更（或專案根缺依賴目錄），W6 前先在專案根執行
-  依賴安裝；`wave-worktree.sh add` 已會把專案根的依賴目錄 symlink 進 worktree，
-  所以應讓安裝發生在專案根，worktree 只引用。
-- 證據：首波合併後第一次 W6 失敗，安裝依賴後重跑通過。
-- 狀態：未升格
-
-## L9：「修到全綠」型 task 單獨占一個波次，diff 為空卻要跑完整閘門（2026-10-29）
-- 情境：同一實驗，tasks.md 每個 story 尾端有「執行全部測試並修到通過」這類收尾
-  task。
-- 錯誤行為：plan 模式的 analyzer 處理不一，有的標低信心、有的記成共用資源、有的
-  列出全部檔案。結果它與其他 task 全部衝突，單獨排成一個波次；實際 diff 為空，
-  仍要跑一輪審查、驗收與 commit。
-- 正確行為：寫入集合無法預知的收尾 task 不參與衝突判定，併入同 phase lane 的最後
-  一步，或由波次收尾（W6 整合測試）吸收；analyzer 定義檔對這類 task 要有單一處理
-  規則。
-- 證據：至少 2 個波次只含這類 task，合併時 diff 為空。
-- 狀態：未升格
-
-## L10：熱點檔把多個 story 串成鏈，波次數多於 phase 數（2026-10-29）
-- 情境：同一實驗，多數 story 都要修改同一個狀態管理檔（reducer）。
-- 錯誤行為：這個檔案讓幾乎所有 story 兩兩衝突，排程只能一條接一條；波次數 19 比
-  依序模式的 phase 數 10 還多。每個波次都要跑一輪閘門，總成本反而高於依序模式。
-- 正確行為：模式判定除了估計加速，也要比較波次數與 phase 數，波次數較多時傾向
-  依序模式；plan 階段若發現單一檔案被大多數 story 寫入，建議拆檔（每個 story 一個
-  slice），或把該檔的改動集中到 Foundational。
-- 證據：腳本預估加速 1.3×（低於 1.5× 門檻，判定依序），使用者為驗證流程強制並行；
-  實際 19 個波次中只有 7 個有兩條 lane 同時跑。
-- 狀態：未升格
-
-## L11：寫入集合不重疊，lane 之間仍有語意衝突（2026-10-29）
-- 情境：同一實驗，兩條 lane 同時實作不同畫面，各自依設計稿（Prototype）實作樣式。
-- 錯誤行為：兩條 lane 的寫入檔案不重疊，但各自實作了設計稿的同一個 CSS class：
-  一個在組合後重複套用（兩層內距、兩層捲動容器），另一個全域版面 class 兩邊都
-  以為對方會做，結果沒人負責。另有 E2E 斷言依賴另一條 lane 尚未寫出的 DOM 結構。
-  審查與驗收各抓到一次，都在波次內修正。
-- 正確行為：plan 模式除了檔案，也要把共用的 CSS class、全域樣式與 E2E 依賴的 DOM
-  約定列為共用資源，指定唯一負責的 task；lane 之間的 DOM 約定寫進 contracts，讓
-  reviewer 依約定核對。
-- 證據：一次審查 MUST-FIX（重複的樣式容器）、一次驗收 FAIL（缺全域版面 class），
-  修正後重跑皆通過。
-- 狀態：未升格
-
-## L12：E2E port 是並行時的共用資源（2026-10-29）
-- 情境：同一實驗，兩條 lane 的 implementer 同時跑 E2E；波次收尾時 validator 與
-  reviewer 也同時起 dev server。
-- 錯誤行為：都用預設 port，互相撞到，出現無關實作的失敗或測到另一條 lane 的
-  server。
-- 正確行為：替每條 lane 與每個 validator／reviewer 分配不同的 port（例如由
-  `wave-worktree.sh add` 寫入 worktree 的環境變數，或在派遣 prompt 指定），E2E
-  設定讀環境變數決定 port 與 base URL。
-- 證據：手動指定不同 port 後撞 port 的失敗消失。
-- 狀態：未升格
-
-## L13：修正迴圈的越界檢查只認本 unit 的 task，太嚴（2026-10-29）
-- 情境：同一實驗，波次修正迴圈要修審查或驗收的發現。
-- 錯誤行為：修正常需改同一 story 早先 task 建立的檔案，這些檔案不在本 unit 的
-  寫入集合 W 裡；W5 越界檢查只對本 unit 的 task ID，每次都判越界，要逐一手動放行。
-- 正確行為：修正迴圈的越界檢查改以「同一 story／phase 已完成 task 的寫入集合」
-  為邊界；只有超出這個範圍的檔案才需放行，並記入越界放行清單。
-- 證據：多次修正迴圈都需手動放行同 story 的地基檔案。
-- 狀態：未升格
-
-## L14：使用者指定模式只改狀態檔，`task-plan.py verify` 讀規劃檔而走錯分支（2026-10-29）
-- 情境：同一實驗，腳本判定依序模式，使用者選擇強制並行；orchestrator 把狀態檔的
-  mode 改為 parallel，parallel-plan.json 仍是 sequential。
-- 錯誤行為：收尾的 `verify` 讀 parallel-plan.json 的 mode，用依序模式的規則核對
-  並行模式的 commit，結果錯誤；只能手動以波次規則重算。涵蓋率統計也把 specs/ 下的
-  設計文件算進「未涵蓋」。
-- 正確行為：mode 只有一個權威來源——`verify` 以狀態檔的 mode 為準（或使用者指定
-  時同步寫回規劃檔，並記 mode_reason）；涵蓋率統計排除 feature 的 specs/ 目錄。
-- 證據：手動重算後實際變更 190 檔、未涵蓋 7（3.7%），依序模式過去實驗為 25–29%；
-  7 檔中 2 檔是 specs/ 文件。
-- 狀態：未升格
-
 ## L15：來源包的 token 命名規則與規格範本互相矛盾（2026-10-29）
 - 情境：同一實驗，上游是含 Prototype 的來源包，plan 要從 Prototype 導入設計 token。
 - 錯誤行為：`source-package.md` 寫「模式 B：由 plan 依用途命名」，
@@ -250,3 +159,94 @@
   `skills/sdd-harness/SKILL.md`#步驟 3、
   `skills/sdd-harness/references/spec-source-template.md`#錨點慣例、
   `skills/make-mockup-harness/scripts/pack-handoff.sh`（產 `index.md`）
+
+## L7：並行波次的整合測試把「預期紅燈」當失敗（2026-10-29）
+- 情境：首次以 sdd-harness 並行模式端到端跑完一個前端 feature（強制並行，19 個
+  波次）。同一波次裡有測試先行（TDD red）的 task，對應實作排在後面的波次。
+- 錯誤行為：W6 整合測試沒有「預期紅燈」的概念，這種波次必定判紅。靜態型別語言
+  的紅燈測試還會讓型別檢查失敗，連帶 build 失敗，E2E 測試的 webServer 起不來，
+  整套 E2E 回歸都跑不了；只能繞道（跳過型別檢查直接打包、手動起 preview server）。
+- 正確行為：tasks.md 標了測試先行的 task，W6 要先列出本波次預期為紅的測試檔，
+  判定時只把「非預期」的失敗算紅；E2E 的 build 指令要能排除尚未有實作的測試檔
+  （或拆出不跑型別檢查的 build），不讓預期紅燈擋住其他回歸。
+- 證據：19 個波次中多次遇到；每次都要人工判定哪些紅燈屬預期，並以替代指令跑 E2E。
+- 狀態：已升格 → `skills/sdd-harness/references/implement-loop.md`#W1、W6、W7；`skills/sdd-harness/scripts/task-plan.py`（next 的 expected_red）；`skills/sdd-harness/agents/sdd-impact-analyzer.md`#Kind；`skills/sdd-harness/agents/sdd-feature-validator.md`#輸入
+
+## L8：worktree 裡安裝的依賴不會合併回專案根（2026-10-29）
+- 情境：同一實驗，首波 lane 在自己的 worktree 執行套件安裝（被 gitignore 的依賴
+  目錄）。
+- 錯誤行為：合併只帶回版控內的檔案，專案根沒有依賴目錄；W6 在專案根跑整合測試
+  直接失敗，要先手動安裝依賴。
+- 正確行為：合併後若 lockfile 有變更（或專案根缺依賴目錄），W6 前先在專案根執行
+  依賴安裝；`wave-worktree.sh add` 已會把專案根的依賴目錄 symlink 進 worktree，
+  所以應讓安裝發生在專案根，worktree 只引用。
+- 證據：首波合併後第一次 W6 失敗，安裝依賴後重跑通過。
+- 狀態：已升格 → `skills/sdd-harness/scripts/wave-worktree.sh`（missing_deps：add 中止、merge 警告）；`skills/sdd-harness/references/implement-loop.md`#W2、W3
+
+## L9：「修到全綠」型 task 單獨占一個波次，diff 為空卻要跑完整閘門（2026-10-29）
+- 情境：同一實驗，tasks.md 每個 story 尾端有「執行全部測試並修到通過」這類收尾
+  task。
+- 錯誤行為：plan 模式的 analyzer 處理不一，有的標低信心、有的記成共用資源、有的
+  列出全部檔案。結果它與其他 task 全部衝突，單獨排成一個波次；實際 diff 為空，
+  仍要跑一輪審查、驗收與 commit。
+- 正確行為：寫入集合無法預知的收尾 task 不參與衝突判定，併入同 phase lane 的最後
+  一步，或由波次收尾（W6 整合測試）吸收；analyzer 定義檔對這類 task 要有單一處理
+  規則。
+- 證據：至少 2 個波次只含這類 task，合併時 diff 為空。
+- 狀態：已升格 → `skills/sdd-harness/agents/sdd-impact-analyzer.md`#Kind（gate）；`skills/sdd-harness/scripts/task-plan.py`（conflict、build）；`skills/sdd-harness/references/implement-loop.md`#0P c
+
+## L10：熱點檔把多個 story 串成鏈，波次數多於 phase 數（2026-10-29）
+- 情境：同一實驗，多數 story 都要修改同一個狀態管理檔（reducer）。
+- 錯誤行為：這個檔案讓幾乎所有 story 兩兩衝突，排程只能一條接一條；波次數 19 比
+  依序模式的 phase 數 10 還多。每個波次都要跑一輪閘門，總成本反而高於依序模式。
+- 正確行為：模式判定除了估計加速，也要比較波次數與 phase 數，波次數較多時傾向
+  依序模式；plan 階段若發現單一檔案被大多數 story 寫入，建議拆檔（每個 story 一個
+  slice），或把該檔的改動集中到 Foundational。
+- 證據：腳本預估加速 1.3×（低於 1.5× 門檻，判定依序），使用者為驗證流程強制並行；
+  實際 19 個波次中只有 7 個有兩條 lane 同時跑。
+- 狀態：已升格 → `skills/sdd-harness/scripts/task-plan.py`（模式判定加「波次數不多於 phase 數」、hot_files）；`skills/sdd-harness/references/implement-loop.md`#0P c、0P e
+
+## L11：寫入集合不重疊，lane 之間仍有語意衝突（2026-10-29）
+- 情境：同一實驗，兩條 lane 同時實作不同畫面，各自依設計稿（Prototype）實作樣式。
+- 錯誤行為：兩條 lane 的寫入檔案不重疊，但各自實作了設計稿的同一個 CSS class：
+  一個在組合後重複套用（兩層內距、兩層捲動容器），另一個全域版面 class 兩邊都
+  以為對方會做，結果沒人負責。另有 E2E 斷言依賴另一條 lane 尚未寫出的 DOM 結構。
+  審查與驗收各抓到一次，都在波次內修正。
+- 正確行為：plan 模式除了檔案，也要把共用的 CSS class、全域樣式與 E2E 依賴的 DOM
+  約定列為共用資源，指定唯一負責的 task；lane 之間的 DOM 約定寫進 contracts，讓
+  reviewer 依約定核對。
+- 證據：一次審查 MUST-FIX（重複的樣式容器）、一次驗收 FAIL（缺全域版面 class），
+  修正後重跑皆通過。
+- 狀態：已升格 → `skills/sdd-harness/agents/sdd-impact-analyzer.md`#Res（樣式、DOM 約定）；`skills/sdd-harness/references/implement-loop.md`#W7；`skills/sdd-harness/agents/sdd-code-reviewer.md`#輸入
+
+## L12：E2E port 是並行時的共用資源（2026-10-29）
+- 情境：同一實驗，兩條 lane 的 implementer 同時跑 E2E；波次收尾時 validator 與
+  reviewer 也同時起 dev server。
+- 錯誤行為：都用預設 port，互相撞到，出現無關實作的失敗或測到另一條 lane 的
+  server。
+- 正確行為：替每條 lane 與每個 validator／reviewer 分配不同的 port（例如由
+  `wave-worktree.sh add` 寫入 worktree 的環境變數，或在派遣 prompt 指定），E2E
+  設定讀環境變數決定 port 與 base URL。
+- 證據：手動指定不同 port 後撞 port 的失敗消失。
+- 狀態：已升格 → `skills/sdd-harness/references/implement-loop.md`#並行模式「E2E port」、W1、W2、W7；`skills/sdd-harness/scripts/task-plan.py`（next 的 ports）；sdd-implementer／sdd-feature-validator／sdd-code-reviewer 的輸入
+
+## L13：修正迴圈的越界檢查只認本 unit 的 task，太嚴（2026-10-29）
+- 情境：同一實驗，波次修正迴圈要修審查或驗收的發現。
+- 錯誤行為：修正常需改同一 story 早先 task 建立的檔案，這些檔案不在本 unit 的
+  寫入集合 W 裡；W5 越界檢查只對本 unit 的 task ID，每次都判越界，要逐一手動放行。
+- 正確行為：修正迴圈的越界檢查改以「同一 story／phase 已完成 task 的寫入集合」
+  為邊界；只有超出這個範圍的檔案才需放行，並記入越界放行清單。
+- 證據：多次修正迴圈都需手動放行同 story 的地基檔案。
+- 狀態：已升格 → `skills/sdd-harness/references/implement-loop.md`#W8；`skills/sdd-harness/scripts/task-plan.py`（next 的 fix+）
+
+## L14：使用者指定模式只改狀態檔，`task-plan.py verify` 讀規劃檔而走錯分支（2026-10-29）
+- 情境：同一實驗，腳本判定依序模式，使用者選擇強制並行；orchestrator 把狀態檔的
+  mode 改為 parallel，parallel-plan.json 仍是 sequential。
+- 錯誤行為：收尾的 `verify` 讀 parallel-plan.json 的 mode，用依序模式的規則核對
+  並行模式的 commit，結果錯誤；只能手動以波次規則重算。涵蓋率統計也把 specs/ 下的
+  設計文件算進「未涵蓋」。
+- 正確行為：mode 只有一個權威來源——`verify` 以狀態檔的 mode 為準（或使用者指定
+  時同步寫回規劃檔，並記 mode_reason）；涵蓋率統計排除 feature 的 specs/ 目錄。
+- 證據：手動重算後實際變更 190 檔、未涵蓋 7（3.7%），依序模式過去實驗為 25–29%；
+  7 檔中 2 檔是 specs/ 文件。
+- 狀態：已升格 → `skills/sdd-harness/scripts/task-plan.py`（mode 子命令、verify --state、排除 feature 目錄）；`skills/sdd-harness/references/implement-loop.md`#0P e、降級回依序模式；`skills/sdd-harness/references/workflow-stages.md`#完成報告
