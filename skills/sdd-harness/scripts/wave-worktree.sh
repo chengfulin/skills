@@ -9,7 +9,8 @@
 #
 # worktree 放在專案根之外：${TMPDIR:-/tmp}/sdd-wt-<NNN>/w<k>-<unit>，分支 sdd-wave/<NNN>-w<k>-<unit>。
 # 被 gitignore 的單檔（.env、.specify/feature.json 等，<1MB）複製進 worktree；
-# 依賴目錄（node_modules、.venv、venv）以 symlink 共用，合併時排除。
+# 依賴目錄（node_modules、.venv、venv）以 symlink 共用，合併時排除。依賴只裝在專案根：
+# add 前專案根缺依賴目錄就中止（退出碼 4）；merge 後若出現缺依賴的 manifest 印 deps=missing。
 #
 # 波次（wave）是本 skill 自訂的執行單位（非慣用語，詳見 README「名詞：批次與波次」）：
 # 由 task-plan.py next 排出，每個 phase 一條 lane（＝這裡的 unit），各 unit 在自己的
@@ -19,13 +20,33 @@ set -euo pipefail
 
 BASE="${TMPDIR:-/tmp}"; BASE="${BASE%/}"
 cmd="${1:-}"; root="${2:-}"; nnn="${3:-}"
-[ -n "$cmd" ] && [ -n "$root" ] && [ -n "$nnn" ] || { sed -n '2,13p' "$0"; exit 2; }
+[ -n "$cmd" ] && [ -n "$root" ] && [ -n "$nnn" ] || { sed -n '2,14p' "$0"; exit 2; }
 WT_DIR="$BASE/sdd-wt-$nnn"
 G() { git -c core.quotepath=off -C "$@"; }
+
+# 版控中有 manifest、專案根卻沒有對應依賴目錄的位置（每行一個缺的目錄）。
+# worktree 只 symlink 專案根已存在的依賴目錄；缺的話 lane 會在 worktree 自己安裝，
+# 合併時帶不回專案根，整合測試就跑不起來。
+missing_deps() {
+    G "$1" ls-files -- 'package.json' '*/package.json' 'uv.lock' '*/uv.lock' 'poetry.lock' '*/poetry.lock' \
+    | while IFS= read -r m; do
+        d=$(dirname "$m"); [ "$d" = . ] && d="" || d="$d/"
+        case "$m" in
+            *package.json) grep -qE '"(dev)?[dD]ependencies"' "$1/$m" 2>/dev/null \
+                               && [ ! -d "$1/${d}node_modules" ] && echo "${d}node_modules" ;;
+            *) [ -d "$1/${d}.venv" ] || [ -d "$1/${d}venv" ] || echo "${d}.venv" ;;
+        esac
+        :  # 迴圈狀態恆為 0，避免 pipefail 讓呼叫端的 $(…) 在 set -e 下中止
+    done
+}
 
 case "$cmd" in
 add)
     k="$4"; shift 4
+    miss=$(missing_deps "$root" | paste -sd, -)
+    if [ -n "$miss" ]; then
+        echo "error=deps_missing ${miss}（先在專案根安裝依賴再建 worktree）"; exit 4
+    fi
     mkdir -p "$WT_DIR"
     for u in "$@"; do
         wt="$WT_DIR/w$k-$u"; br="sdd-wave/$nnn-w$k-$u"
@@ -78,6 +99,9 @@ merge)
             echo "unit=$u status=conflict files=$ok reason=$(head -1 "$wt.err")"
         fi
     done
+    # 合併帶進新的 manifest（如首波由 lane 建立專案骨架）時，依賴只裝在了 worktree
+    miss=$(missing_deps "$root" | paste -sd, -)
+    [ -z "$miss" ] || echo "deps=missing ${miss}（整合測試前在專案根安裝依賴）"
     ;;
 status)
     for wt in "$WT_DIR"/w*; do
@@ -100,5 +124,5 @@ clean)
         | while IFS= read -r br; do G "$root" branch -q -D "$br"; done
     echo "clean=ok"
     ;;
-*) sed -n '2,13p' "$0"; exit 2 ;;
+*) sed -n '2,14p' "$0"; exit 2 ;;
 esac

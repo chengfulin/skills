@@ -35,6 +35,9 @@ model: inherit
   出自影響邊界報告）；Setup／Foundational／Polish 以該 phase 任務描述涉及的
   檔案為邊界。並行模式改附該 unit 的寫入集合（W）——它同時是與其他 lane 不衝突
   的依據，寫到 W 之外的檔案可能和別條 lane 撞檔。
+- **E2E_PORT**（並行模式提供）：起 server 的測試一律帶環境變數 `E2E_PORT=<port>`
+  執行，不用預設 port——其他 implementer 可能同時在跑 E2E。你的任務若要建立 E2E
+  設定，讓它以 `E2E_PORT` 決定 port 與 base URL（未設時用原預設值）。
 - **前輪發現表**（修正迴圈時提供）：validator／reviewer 的發現與逐項修正要求
   ——先逐項修正，再回報每項的處理方式。
 

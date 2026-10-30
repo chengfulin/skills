@@ -28,7 +28,7 @@ sdd-harness（orchestrator skill）
    │  8  /speckit.implement ─ codegraph 建索引；Setup 前依 phase 並行派
    │        [sdd-impact-analyzer]（plan 模式）逐 task 取集合 → task-plan.py
    │        排出全域並行批次、決定執行模式 ──────────────────── commit
-   │        並行模式（codegraph 且估計加速 ≥1.5×）逐波次：
+   │        並行模式（codegraph、估計加速 ≥1.5×、波次數 ≤ phase 數）逐波次：
    │        每個 phase 一條 lane，至多 3 個 [sdd-implementer] 各在 worktree 實作
    │        → 合併 → 越界檢查 → 整合測試 → [sdd-code-reviewer]＋[sdd-feature-validator]
    │        → 通過才 commit → codegraph sync
@@ -132,7 +132,7 @@ sdd-harness/
   寫入／讀取集合、共用資源、契約變更、task 相依與信心，由 `scripts/task-plan.py` 對全部
   task 兩兩判定衝突（只算 task 相依；信心低＝落點要等別的 task 實作後才知道者，視為與全部
   衝突），排出全域並行批次與關鍵路徑寫入 `parallel-plan.json` 與狀態檔，並模擬波次決定
-  模式：codegraph 分析且估計加速 ≥1.5× 走**並行模式**——每個波次每個 phase 一條 lane，
+  模式：codegraph 分析、估計加速 ≥1.5× 且波次數不多於 phase 數走**並行模式**——每個波次每個 phase 一條 lane，
   至多 3 個 implementer 各在自己的 git worktree 實作，合併回專案根後整批過越界檢查、
   整合測試、審查與驗收，一個波次一個 commit；撞檔累計 2 個波次即建議降級。其餘走
   **依序模式**（逐 phase）。完成報告附集合涵蓋率與可能漏判，供校準門檻。
