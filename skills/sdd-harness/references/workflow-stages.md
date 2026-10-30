@@ -222,10 +222,12 @@ story 迴圈。
       "current_wave": {
         "k": 3,
         "units": {
-          "u1": {"phase": "US1", "tasks": ["T014", "T015"], "W": ["src/a.ts", "test/a.spec.ts"]},
-          "u2": {"phase": "US2", "tasks": ["T021"], "W": ["src/b.ts"]}
+          "u1": {"phase": "US1", "tasks": ["T014", "T015"], "W": ["src/a.ts", "test/a.spec.ts"], "fix": ["src/a-store.ts"], "port": 4101},
+          "u2": {"phase": "US2", "tasks": ["T021"], "W": ["src/b.ts"], "fix": [], "port": 4102}
         },
-        "completes": ["US2"]
+        "completes": ["US2"],
+        "expected_red": ["test/c.spec.ts"],
+        "gate_ports": [4110, 4111, 4112]
       }
     }
   },
@@ -245,7 +247,8 @@ commit 入版控（收尾必須 working tree 乾淨，不允許 commit 後再補
 不記 commit sha——需要時以 `git log --grep '（NNN, USk）'` 或階段訊息回溯。
 
 `parallel_plan` 欄位（implement-loop.md 步驟 0P 由 `scripts/task-plan.py build`
-寫入，主對話只在使用者指定或降級時改 `mode`／`mode_reason`；未勾選 task 少於 2 個
+寫入；使用者指定或降級時一律以 `task-plan.py mode` 改 `mode`／`mode_reason`（同時改
+`parallel-plan.json`，兩處不得手改成不一致）；未勾選 task 少於 2 個
 時不建立）：`mode` 取 `parallel`／`sequential`，`mode_reason` 一句話原因；
 `granularity` 恆為 `task`；`basis` 取 `codegraph`／`grep`／`greenfield`（各
 analyzer 中最弱者）；`tasks`／`pairs`／`conflict_pairs` 為規劃涵蓋的 task 數、
@@ -258,8 +261,10 @@ pair 數與衝突 pair 數；`by_type` 的鍵取 `寫入`／`相依`／`資源`�
 重規劃回到步驟 8 前刪除此欄位與 `plan_file`（任務已變，規劃失效）。
 
 `waves_done`／`current_wave`（僅並行模式）：`task-plan.py next` 排出波次時寫入
-`current_wave`（`k` 波次序號、`units` 各 unit 的 phase／任務／寫入集合、`completes`
-本波次完成的 phase），`task-plan.py close` 在波次 commit 前移除它並把 `waves_done`
+`current_wave`（`k` 波次序號、`units` 各 unit 的 phase／任務／寫入集合／`fix`（修正
+邊界的延伸：同 phase 先前波次已完成 task 的寫入集合）、`completes` 本波次完成的
+phase、`expected_red` 預期紅燈的測試檔與其中已 commit 的 `expected_red_base`、各 unit 的
+`port`、`lane_fix`（fix 扣掉同波次其他 lane 的 W 與 R）與閘門用的 `gate_ports`），`task-plan.py close` 在波次 commit 前移除它並把 `waves_done`
 加 1——所以**已 commit 的狀態檔不會有 `current_wave`**，出現在 dirty 狀態檔裡＝
 該波次進行中。
 
@@ -353,7 +358,8 @@ pair 數與衝突 pair 數；`by_type` 的鍵取 `寫入`／`相依`／`資源`�
 
 有 `parallel_plan` 時另附**並行規劃觀察**（供校準規劃與模式門檻），內容取自
 `python3 $SKILL_DIR/scripts/task-plan.py verify --plan <FEATURE_DIR>/parallel-plan.json
---root <專案根> --feature NNN`：採用的模式與原因、task 數／批次數／理論加速、
+--state <FEATURE_DIR>/.sdd-workflow.json --root <專案根> --feature NNN`（mode 以狀態檔為準；
+feature 目錄內的檔案不計入涵蓋率）：採用的模式與原因、task 數／批次數／理論加速、
 衝突比例與類型分布，以及**集合涵蓋率**——依序模式以各 phase 的 commit、並行模式
 以各波次 commit（body 的 `tasks:` 行）核對：實際變更檔中沒被對應 task 寫入集合
 涵蓋的檔案，其中也被其他 phase／波次碰到的列為「可能漏判」（並行時最可能撞檔

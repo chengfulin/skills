@@ -14,7 +14,9 @@ init **不會**自動 gitignore（1.2.0／1.6.0／1.6.1 實測）——確認目
 **測試工具前置**：依 plan.md 的技術選型確認測試執行工具可用（如
 `bats --version`、`pytest --version`，以 plan.md 實際選定者為準）；缺工具 →
 停下回報並給安裝指引（例：`brew install bats-core`），不得帶病進入 story
-迴圈——validator 無法執行測試＝驗收閘門必卡。撰寫 bats 測試時
+迴圈——validator 無法執行測試＝驗收閘門必卡。例外：工具鏈由 tasks.md 的 Setup
+建立（greenfield、或 Setup 要新裝測試框架）→ 不停下；並行模式第一個波次起 W1 加
+`--setup-first`，直到 Setup 完成。撰寫 bats 測試時
 `@test` 名稱一律用 ASCII，情境說明放註解（非 ASCII 名稱會使整檔 parse 失敗，
 bats 1.13 實測）。
 
@@ -67,10 +69,14 @@ ID；每次 implementer 回報（含分批、修正迴圈、失敗續作）後�
       分批：先依明文 Dep 做拓撲排序（同層依 tasks.md 順序；成環的 task 比照信心
       低，與其他所有 task 衝突），衝突再依此順序定方向；
       task 的批次＝1＋（衝突的前序 task 的最大批次）。同批＝判定可同時開工。
+      **收尾 task**（`Kind=gate`：執行全部測試並修到通過這類寫入集合無法預知者）
+      不做集合判定，只排在同 phase 其他 task 之後、併入該 phase 的 lane 最後一步，
+      不會單獨占一個波次。
       **模式判定**（腳本輸出 `mode=`）：以每個 phase 一條 lane 模擬波次（見下方
       「並行模式」），估計加速＝task 數 ÷ 各波次最長 lane 的 task 數總和；分析基礎
-      為 `codegraph` 且估計加速 ≥1.5× → `parallel`，否則 `sequential`（原因寫在
-      `mode_reason`）。greenfield／降級 grep 的集合不夠可靠，不能當並行實作的邊界。
+      為 `codegraph`、估計加速 ≥1.5×、且波次數不多於 phase 數 → `parallel`，否則
+      `sequential`（原因寫在 `mode_reason`）。greenfield／降級 grep 的集合不夠可靠，
+      不能當並行實作的邊界；波次比 phase 多時每個波次都要過一輪閘門，總成本高於依序。
    d. 腳本已把摘要寫入狀態檔 `steps.implement.parallel_plan`（schema 見
       workflow-stages.md），完整規劃在 `parallel-plan.json`。立即
       `git add -A && git commit -m "chore(sdd): 完成並行規劃（NNN）"`——避免規劃
@@ -80,11 +86,17 @@ ID；每次 implementer 回報（含分批、修正迴圈、失敗續作）後�
       task；另列 **tasks.md 品質訊號**
       ——`order_conflicts`（task 依賴排在後面的 task）、`cyclic`（明文相依成環，
       已比照低信心處理）、`P_marked_conflicts`（標
-      `[P]` 卻被判衝突的 pair 數）與 analyzer 指出的「沒有 task 負責的必要改動」，
-      建議使用者是否回 tasks.md 修正（不設閘門，修正走 8R 或下次 feature 改善）。
-      使用者要求改用另一個模式 → 改寫 `parallel_plan.mode` 並把 `mode_reason` 記為
-      「使用者指定：<原因>」，隨下一個 commit 入版控；在 `basis` 不是 codegraph 時
-      指定並行，先提醒越界與撞檔會變多。
+      `[P]` 卻被判衝突的 pair 數）、`hot_files`（被半數以上 story 寫入的檔，會把
+      story 串成一條鏈——建議拆成每個 story 一個 slice，或把該檔的改動集中到
+      Foundational）與 analyzer 指出的「沒有 task 負責的必要改動」（含沒人實作的
+      共用樣式或 DOM 約定），建議使用者是否回 tasks.md 修正（不設閘門，修正走 8R
+      或下次 feature 改善）。
+      使用者要求改用另一個模式 →
+      `python3 $SKILL_DIR/scripts/task-plan.py mode --plan <FEATURE_DIR>/parallel-plan.json
+      --state <FEATURE_DIR>/.sdd-workflow.json --set <parallel|sequential> --reason "使用者指定：<原因>"`
+      （規劃檔與狀態檔一起改，不手改其中一個——verify 等腳本讀規劃檔），隨下一個
+      commit 入版控；在 `basis` 不是 codegraph 時指定並行，先提醒越界與撞檔會變多；
+      波次數多於 phase 數時指定並行，先提醒總閘門輪數會比依序模式多。
 
 **依 `steps.implement.parallel_plan.mode` 進入對應模式**：`parallel` → 下方「並行
 模式」；`sequential` 或沒有 `parallel_plan` → 下方「依序模式」。
@@ -174,26 +186,54 @@ commit。同時最多 3 條 lane；一條 lane 累計寫入超過 12 個檔就�
 波次。**0P 的集合就是實作邊界**——不另派 boundary 模式的 analyzer；集合漏判由合併
 撞檔、越界檢查與整合測試三道關卡抓。
 
+**E2E port**：同一時間可能有多個 implementer、reviewer、validator 各自起 server 跑
+E2E，用同一個固定 port 會互撞。所以起 server 的測試一律以環境變數 `E2E_PORT` 決定
+port 與 base URL，由 W1 輸出的 `ports=` 分配，每個 subagent 一個。進第一個波次前
+檢查 plan.md 選定的 E2E 設定：已存在且寫死 port → 先派 `sdd-implementer`（專案根）
+改成讀 `E2E_PORT`（未設時沿用原 port），單獨
+`git commit -m "chore(sdd): E2E port 改讀環境變數（NNN）"`；還不存在（由某個 task
+建立）→ 派遣時由 prompt 的 `E2E_PORT` 要求一併照辦。
+
 W1. **排波次**：
     ```bash
     python3 $SKILL_DIR/scripts/task-plan.py next --tasks <FEATURE_DIR>/tasks.md \
-      --plan <FEATURE_DIR>/parallel-plan.json --state <FEATURE_DIR>/.sdd-workflow.json
+      --plan <FEATURE_DIR>/parallel-plan.json --state <FEATURE_DIR>/.sdd-workflow.json \
+      [--setup-first]
     ```
-    輸出 `wave=<k>`、`completes=`（本波次做完就全數完成的 phase），以及每個 unit
-    一行 `u<j> | <phase> | <task ID，依執行順序> | W=<寫入集合>`；腳本同時把波次寫入
-    狀態檔 `current_wave`（續跑時原樣印出、標 `resume=yes`，不重排）。
+    `--setup-first`：專案根還沒有能跑 plan.md 測試指令的工具鏈、且 Setup 有未完成
+    task 時加上——只排 Setup 一條 lane（輸出 `reason=toolchain`）；其他 lane 在沒有
+    工具鏈的 worktree 裡寫的測試無法驗證。
+    輸出 `wave=<k>`、`completes=`（本波次做完就全數完成的 phase），每個 unit
+    一行 `u<j> | <phase> | <task ID，依執行順序> | W=<寫入集合>`，非空時另兩行
+    `u<j> fix+=<檔案>`（同 phase 先前波次已完成 task 的寫入集合，**只用於專案根的
+    W6／W8 修正**）與 `u<j> lane-fix+=<檔案>`（fix+ 扣掉同波次其他 lane 的 W 與 R，
+    W2 給含收尾 task 的 lane 當邊界延伸用），
+    `expected_red=<測試檔>`（測試先行的 task 已寫好、對應實作在本波次結束後仍未完成
+    ——對應實作＝同 phase 中寫入集合與該測試讀取集合相交的 task，找不到時以所屬 phase
+    仍有未完成 task 為準；這些測試失敗屬預期，W6、W7 用）、`expected_red_base=`
+    （其中已 commit、worktree 裡看得到的部分，W2 用），以及 `ports=u1=<port> … gates=<port,…>`
+    （W2 的 implementer 依 unit、W7 的 reviewer／validator 依序各取一個）；腳本同時把波次寫入狀態檔
+    `current_wave`（續跑時原樣印出、標 `resume=yes`，不重排）。
     `wave=none` → 跳到「並行模式收尾」；`error=stale_plan` → 回 0P 只規劃剩下的 task。
 W2. **派遣**：
     - **只有 1 個 unit** → 不建 worktree，在專案根派 `sdd-implementer`（依模板：
       專案根絕對路徑 + phase + 任務 ID 清單 + feature 目錄 + speckit-implement
-      SKILL.md 路徑；邊界＝該 unit 的 W），直接進 W4。
+      SKILL.md 路徑 + `E2E_PORT` + 下方「派遣附件」；邊界＝該 unit 的 W），直接進 W4。
     - **多個 unit** → `bash $SKILL_DIR/scripts/wave-worktree.sh add <專案根> <NNN> <k> u1 u2 …`
       （每個 unit 從 HEAD 建一個 worktree，被 gitignore 的單檔如 `.env`、
-      `.specify/feature.json` 會複製進去，`node_modules`／`.venv` 以 symlink 共用）；
+      `.specify/feature.json` 會複製進去，`node_modules`／`.venv` 以 symlink 共用）。
+      退出碼 4（`error=deps_missing`）＝專案根有宣告依賴的 manifest 卻沒有依賴目錄
+      ——依 plan.md 的安裝指令在專案根安裝後重跑 add（依賴只裝在專案根，worktree
+      只引用；在 worktree 裡裝的依賴合併時帶不回來）；
       在**同一則訊息**並行派 `sdd-implementer`，每個 unit 一個（依模板：專案根
       絕對路徑 + **工作目錄＝該 unit 的 worktree 路徑** + phase + 任務 ID 清單（照
-      W1 的順序）+ feature 目錄 + 專案根下的 speckit-implement SKILL.md 路徑；邊界＝
-      該 unit 的 W）。
+      W1 的順序）+ feature 目錄 + 專案根下的 speckit-implement SKILL.md 路徑 +
+      該 unit 的 `E2E_PORT` + 下方「派遣附件」；邊界＝該 unit 的 W）。
+    - **派遣附件**（每個 implementer 都附）：`expected_red_base` 中不在本 unit W 內的
+      檔，註明「這些檔的失敗不是本 unit 的問題，不得修改；收尾 task 修到全綠時排除
+      它們」；上一個波次 commit body 記的替代指令（型別檢查／build 因預期紅燈失敗時
+      怎麼跑，見 W6）；該 unit 各 task 在 parallel-plan.json 的 C（契約變更）。unit 含
+      收尾 task（Kind=gate）時，邊界＝W 加 `lane-fix+`（不是 `fix+`）。
     - 任一 unit 回報「受阻」或「越界候選」→ 先解決（同依序模式 2b），再對**同一個
       worktree** 重派續作。全部 unit 有結論後才合併；決定放棄的任務不勾，下一個
       波次會重新排到。
@@ -206,6 +246,8 @@ W3. **合併**（多 unit 波次）：
       下一個波次會在新基礎上重做；記入波次 commit body 的「合併衝突退回」。
     - `status=empty`：沒有變更。回報卻說有完成任務 → 視同回報無法判讀
       （workflow-stages.md「錯誤處理細則」）。
+    - 最後一行 `deps=missing <目錄>`：合併帶進了尚未安裝依賴的 manifest（例如首波由
+      lane 建立專案骨架）→ W6 前依 plan.md 的安裝指令在專案根安裝。
 W4. **勾選**：依各 unit 回報勾選（規則同上方「tasks.md 勾選」，核對範圍＝該 unit
     的任務清單；`conflict` 的 unit 不勾）。
 W5. **越界檢查（逐 unit）**：tasks.md 的 diff 只有本波次的勾選；該 unit 的 `files=`
@@ -215,21 +257,32 @@ W5. **越界檢查（逐 unit）**：tasks.md 的 diff 只有本波次的勾選�
       停下回報使用者，建議還原該檔、把相關 task 的勾選撤回留到下一個波次重做。
     - 否則同依序模式 2c：對得到該 unit 的任務 ID → 放行並記入越界放行清單；對不到
       → 停止實作，回報使用者。
-W6. **整合測試**：以 plan.md 選定的測試指令在專案根跑全量測試，輸出寫入
-    `${TMPDIR:-/tmp}/sdd-wave-<NNN>-<k>.log`，只讀摘要（`tail -30`）。各 worktree
-    單獨綠燈不代表合起來沒壞（例如一條 lane 改了建構子簽名、另一條 lane 的新測試用
-    舊簽名），這一步抓合併後才出現的語意衝突。失敗 → 派 `sdd-implementer`（專案根、
-    不建 worktree；附失敗摘要與 log 路徑；邊界＝本波次全部 unit 的 W）修正，計入
-    W8 的 3 輪上限。
+W6. **整合測試**：以 plan.md 選定的測試指令（單元測試、型別檢查、lint、E2E）在專案根
+    跑全量，但**排除 W1 的 `expected_red`**（測試指令的排除參數、型別檢查的 exclude；
+    build 含型別檢查時改用不含型別檢查的 build 起 E2E），輸出寫入
+    `${TMPDIR:-/tmp}/sdd-wave-<NNN>-<k>.log`，只讀摘要（`tail -30`）。排除後剩下的就
+    是已完成部分的回歸：早期波次的 E2E 多半都在清單裡、自然不跑，後期波次每波都會跑
+    已完成 story 的 E2E。用了什麼替代指令記入波次 commit body。各 worktree
+    單獨綠燈不代表合起來沒壞（例如一條 lane 改了建構子簽名或把元件參數改成必填、
+    已完成 story 的呼叫端還沒跟上），這一步抓合併後才出現的語意衝突。
+    失敗 → 派 `sdd-implementer`（專案根、不建 worktree；附失敗摘要與 log 路徑；
+    邊界＝本波次全部 unit 的 W 與 `fix+`）修正，計入 W8 的 3 輪上限。
 W7. **閘門**（在**同一則訊息**並行派）：
     - `sdd-code-reviewer`，每個 unit 一個（依模板；diff 範圍＝`git diff HEAD --
       <該 unit 的 files>` 加其中的 untracked；註明 phase 與任務 ID；附件＝該 unit 各
-      task 在 parallel-plan.json 的 W 與 C（契約變更）、越界放行清單）→ 需 APPROVE。
-    - `sdd-feature-validator`，`completes=` 中每個 user story 一個（story ID）→ 需
-      PASS。Setup／Foundational／Polish 不派（由 W6 與收尾的 `all` 回歸涵蓋）。
+      task 在 parallel-plan.json 的 W、R、Dep、C（契約變更）與 Res 中的 `樣式`／`DOM
+      約定`、越界放行清單；`E2E_PORT`＝`gates` 的下一個）→ 需 APPROVE。
+    - `sdd-feature-validator`，`completes=` 中每個 user story 一個（story ID；
+      `expected_red` 非空時附上清單，說明這些測試檔的失敗屬其他 story 尚未實作的
+      預期紅燈；`E2E_PORT`＝`gates` 的下一個）→ 需 PASS。Setup／Foundational／Polish 不派（由 W6 與收尾的 `all`
+      回歸涵蓋）。
 W8. **修正迴圈**：同依序模式 2f（上限 3 輪），差別：修正一律在專案根進行；修正後重跑
     W5 越界檢查與 W6 整合測試；動到產品程式碼 → 對修正涉及的 unit 重派 reviewer
     覆審，並對 `completes=` 的 story 重派 validator 回歸。
+    修正的越界邊界＝該 unit 的 W **加上** `fix+`：修正常要改同 story 前面 task 建立的
+    檔，這些檔已在前面的波次 commit，與本波次其他 lane 無關，直接放行不必逐檔
+    裁決。超出 W 與 `fix+` 的檔案才照 W5 的規則處理（撞到別條 lane／對得到任務 ID
+    放行並記錄／對不到就停）。
 W9. **收尾**：依下方「波次收尾 checklist」逐項核對後 commit，回到 W1。
 
 **波次收尾 checklist**（每個波次收尾前回到本節重讀，逐項打勾）：
@@ -242,15 +295,16 @@ W9. **收尾**：依下方「波次收尾 checklist」逐項核對後 commit，�
 - [ ] `git add -A && git commit`，訊息 `feat(sdd): 實作波次 <k>（NNN）`，body 逐行：
       `tasks: <本波次勾選的 ID，逗號分隔>`（完成報告靠它核對涵蓋率）、每個完成的
       story 一行 `完成 USk：<story 標題>`、有的話加 `越界放行：<檔案> → <任務 ID>`、
-      `合併衝突退回：<任務 ID>` 與 `撞到別條 lane：<檔案>`（完成報告據此統計漏判）
+      `合併衝突退回：<任務 ID>` 與 `撞到別條 lane：<檔案>`（完成報告據此統計漏判）、
+      W6 用了替代指令時加 `預期紅燈：<檔案>；替代指令：<指令>`
 - [ ] `git status --porcelain` 為空
 - [ ] `bash $SKILL_DIR/scripts/wave-worktree.sh clean <專案根> <NNN>`（單 unit 波次也跑，無害）
 - [ ] `codegraph sync`（codegraph 可用時）
 
 **降級回依序模式**：同一 feature 累計 2 個波次出現 W3 `conflict` 或 W5「撞到別條
 lane」→ 集合對這個專案不夠可靠。AskUserQuestion 建議改回依序模式；同意 → 先讓
-當下的波次照常收尾，再把 `parallel_plan.mode` 改為 `sequential`、`mode_reason` 記
-原因，隨下一個 commit 入版控，剩下的 task 照「依序模式」執行。
+當下的波次照常收尾，再以 `task-plan.py mode --set sequential --reason "<原因>"`
+（參數同 0P e）改回依序，隨下一個 commit 入版控，剩下的 task 照「依序模式」執行。
 
 **並行模式收尾**（W1 印出 `wave=none`）：派 `sdd-feature-validator`（依模板，story
 ID＝`all`：全 feature 回歸）→ 需 PASS（FAIL → 通用規則 4 修正迴圈，上限 3 輪；

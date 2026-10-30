@@ -20,6 +20,11 @@ model: inherit
   每個 user story 的驗收情境，輸出按 story 分節，任一 story 任一條 FAIL 即整體 FAIL。
 - **feature 目錄**：如 `specs/001-xxx/`
 - **前輪發現表**（複核／回歸時提供）：先逐項判定 fixed / not-fixed，再跑全套驗證。
+- **E2E_PORT**（並行模式提供）：起 server 的測試與手動啟動的應用一律帶環境變數
+  `E2E_PORT=<port>`，不用預設 port——其他 subagent 可能同時在跑。
+- **預期紅燈清單**（並行模式可能提供）：其他 story 測試先行寫好、實作還在後面波次
+  的測試檔。這些檔的失敗不算本次 FAIL，但要在「測試套件結果」列出；清單外任何失敗
+  照常判 FAIL。測試指令或 build 因這些檔整個跑不起來時，排除它們再跑並寫明用的指令。
 
 若未提供 feature 目錄，讀 `<專案根>/.specify/feature.json` 的 `feature_directory`。
 
@@ -55,7 +60,7 @@ model: inherit
 <每個 FAIL：現象、可能原因、建議修正方向（不動手修）>
 ```
 
-全部通過才是 PASS；任何一條 FAIL、測試套件紅燈、或應用無法啟動，結論即 FAIL。
+全部通過才是 PASS；任何一條 FAIL、測試套件紅燈（預期紅燈清單內的檔案除外）、或應用無法啟動，結論即 FAIL。
 
 ## 回報合約（長度上限）
 

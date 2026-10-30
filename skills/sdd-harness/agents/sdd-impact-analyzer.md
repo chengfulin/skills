@@ -108,10 +108,21 @@ data-model.md、`contracts/` 推得；既有檔案與 symbol 照上方步驟 2�
   範圍或他範圍）新建或修改的檔案**——這是腳本判定「相依」的依據。
 - **Res（共用資源）**：`類別:識別`，類別用固定詞彙以便比對——`migration`、
   `套件清單`、`設定檔`、`環境變數範本`、`登錄點`、`i18n`、`fixture`、
-  `測試執行期`（固定 port、測試 DB、需 CPU 閒置的測試）、`產出物`（版控中的
-  產生檔）、`文件`（多個 task 都會寫的文件小節）。識別寫路徑或資源名稱。
+  `測試執行期`（測試 DB、需 CPU 閒置的測試；E2E 的 port 由波次以 `E2E_PORT` 分配，
+  不必登記）、`產出物`（版控中的產生檔）、`文件`（多個 task 都會寫的文件小節）、
+  `樣式`（設計稿裡的共用 CSS class、全域版面樣式、design token；識別寫 class 名或
+  token 名，如 `樣式:.wrap`）、`DOM 約定`（其他 task 的程式或 E2E 斷言依賴的選擇器、
+  `data-testid`、DOM 結構；識別寫選擇器）。識別寫路徑或資源名稱。
+  寫入集合不重疊的 task 仍可能語意衝突：兩個畫面各自實作設計稿的同一個 class 會重複
+  套用，全域 class 兩邊都以為對方會做就沒人做。所以同一個共用 class 只該由一個 task
+  實作：實作它的 task 登記 `樣式:<class>`，只使用它的 task 把實作方寫進 Dep。
+  `DOM 約定` 同理，只由**產生**該 DOM 的 task 登記；斷言它的一方（E2E、元件測試、
+  依賴它的程式）不登記，只把產生方寫進 Dep；只定義定位器、不斷言的 E2E fixture 兩者
+  都不必（定位器不需要 DOM 先存在）。
+  找不到任何 task 負責的共用 class 或 DOM 約定，列進回報的「沒有 task 負責的必要改動」。
 - **C（契約變更）**：`symbol@路徑`——interface／abstract class 新增或改簽名的
-  method、建構子或 DI 參數增減、登錄點新增項目。
+  method、建構子或 DI 參數增減、元件 props 增減或改必填、登錄點新增項目。已存在的
+  呼叫端檔案一併放進該 task 的 R（reviewer 與 implementer 據此判斷要不要寫成向後相容）。
 - **Dep（相依）**：必須先完成的 task ID。來源只有兩種：tasks.md 明文（如「引自
   T022」「T005 MUST 早於 T006」），或程式上的實質需要（要用的 symbol 由該 task
   建立）。他範圍的 task 直接寫 ID，**排在後面的 task 也照寫**——例如本 story 的
@@ -128,12 +139,23 @@ data-model.md、`contracts/` 推得；既有檔案與 symbol 照上方步驟 2�
     選處置」、要擴充的檔案或 symbol 由其他 task 決定名稱與位置、或描述含混到
     寫入集合無法界定。腳本會把低信心 task 記為**與其他所有 task 衝突**，所以
     不要因為「沒有索引」這類一般不確定就標低。
+- **Kind（類型，可省略）**：
+  - `test`＝測試先行的測試 task（tasks.md 的 Tests 小節、或描述寫明先寫測試並確認
+    失敗）——對應實作完成前，這些測試本來就該失敗。腳本據此算出每個波次的「預期
+    紅燈」，整合測試不把它們當失敗。腳本以「同範圍中寫入集合與該測試 R 相交的 task」
+    判定對應實作，所以 R 要列出被測的實作檔；W 只放測試檔，測試輔助檔（工廠、fixture）
+    若由同一 task 建立仍寫進 W，但不會被列為預期紅燈。
+  - `gate`＝收尾 task：執行全部測試／lint／型別檢查並修到通過這類寫入集合事先無法
+    預知者。W 留空、R 留空、Conf 照實填（**不要**為此標低）；它要收尾的範圍超出
+    本 phase 時，Dep 寫那些 phase 標籤。腳本不拿它做集合判定，排在同 phase 最後。
+  - 其他 task 省略本欄。
 
 輸出寫到 prompt 指定的檔案（以 Bash heredoc 寫入；路徑在專案根之外），每個 task
 一行，欄位以 ` | ` 分隔、清單內以 `,` 分隔，無則留空：
 
 ```
 T014 | P=yes | W=backend/src/a.ts,backend/test/a.spec.ts | R=backend/src/b.ts | Res=登錄點:backend/src/app.module.ts | C=PaymentAdapter.refund@backend/src/payment.ts | Dep=T013,US1 | Conf=中
+T015 | P=yes | W=backend/test/refund.spec.ts | R=backend/src/payment.ts | Res= | C= | Dep= | Conf=高 | Kind=test
 ```
 
 `P=` 填 tasks.md 該 task 是否標 `[P]`（yes/no）。路徑一律寫相對專案根的完整路徑。
