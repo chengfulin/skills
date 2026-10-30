@@ -1,7 +1,8 @@
-# spec.md「規格來源」範本段落（v4）
+# spec.md「規格來源」範本段落（v5）
 
 > 用途：feature 以 StoryBoard 與 Prototype 為依據時，放在 spec.md 開頭（`**Input**` 之後、`## Clarifications` 之前），為必填段落。
 > 來源：歸納多個以 StoryBoard 與設計稿為依據的 feature 實務：來源表與 StoryBoard 優先、第三方權威與部署後目視重做、版面依設計稿與偏離分類。
+> v5 起第 4 條模式 B 不再寫命名規則（移到 `source-package.md`）；v4 的舊文「命名沿用 Prototype，清單見 research.md」在機械檢查 7 也視為原文。
 > `<!-- -->` 為填寫指引，產出 spec 時刪除；`<!-- spec-source:begin -->`／`end` 錨點保留，供機械檢查定位。
 > 本檔屬 sdd-harness，不隨來源包分發：specify 階段把「規格來源」段複製進 spec.md，機械檢查 7 比對本檔的權威劃分原文。
 > 來源是需求交接包（來源包）時的各階段規則見同目錄 `source-package.md`。
@@ -61,7 +62,7 @@
    以 Prototype 逐字採用。有外部權威列時，外部權威的用詞優先於兩者。
 4. **視覺樣式**：Prototype 是目標外觀，實作一律透過 design token 與共用元件，不照搬行內樣式或色碼。
    - 模式 A（沿用專案現行）：Prototype 的樣式對應到現有 token；對應不到或數值不同處登記偏離。
-   - 模式 B（自 Prototype 導入）：從 Prototype 萃取 token，命名沿用 Prototype，清單見 research.md。
+   - 模式 B（自 Prototype 導入）：從 Prototype 萃取 token，清單與命名見 research.md「設計 token」節。
    - 狀態標籤：「顯示哪個狀態」屬業務規則；「顏色與形狀」屬視覺樣式。
 5. **來源都沒定義的部分**（空狀態、錯誤、載入中、窄螢幕等）：依專案既有慣例補齊，登記在「來源缺口」。
 

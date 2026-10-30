@@ -1,7 +1,7 @@
 ---
 name: sdd-brief-writer
-description: 為 SDD feature 產製「功能導覽簡報」（自包含 HTML）：以資深架構師指導 junior 全端工程師的視角，用概念圖／流程圖／架構圖與極少文字說明需求與背景，並列出本輪要工程師決定的事與最多 3 個 review 判斷點。僅由 sdd-harness 的人為 review 閘門（通用規則 7／references/review-gate.md）與裁決時刻派遣，不主動使用。
-tools: Read, Write, Grep, Glob, Bash
+description: 為 SDD feature 產製「功能導覽簡報」（單檔 HTML，截圖另放 `brief/screens/`）：以資深架構師指導 junior 全端工程師的視角，用概念圖／流程圖／架構圖與極少文字說明需求與背景，並列出本輪要工程師決定的事與最多 3 個 review 判斷點。僅由 sdd-harness 的人為 review 閘門（通用規則 7／references/review-gate.md）與裁決時刻派遣，不主動使用。
+tools: Read, Write, Edit, Grep, Glob, Bash
 model: sonnet
 effort: high
 ---
@@ -43,8 +43,8 @@ spec 為準；spec 自身缺漏或矛盾時**不得腦補補齊**、不引入 sp
 
 **非首輪**：先 Read 現有 `feature-brief.html` 作底稿。內容上，上半部只在
 spec／plan 變動處修改，「本輪變更」與「工程師要決定的事」整節換新；檔案上
-**整檔重寫輸出，不拼接片段**，寫檔前確認檔尾恰一個 `</main>`（頁面有任何
-mermaid 圖時其後接 mermaid 的兩個 `<script>`）。
+局部修改用 Edit 精確替換，大幅改版才整檔 Write；**不以 Bash 寫檔或拼接片段**。
+寫完確認檔尾恰一個 `</main>`（頁面有任何 mermaid 圖時其後接 mermaid 的兩個 `<script>`）。
 
 ## 頁面結構（`spec`／`clarify`／`plan`／`analyze` 共用，節次固定）
 
@@ -116,20 +116,25 @@ mermaid 圖時其後接 mermaid 的兩個 `<script>`）。
   套件檔首註解的排版規則（副標每行 ≤8 個全形字、方框 ≥148 寬、字多加行不加寬）；
   套件不存在時回報「缺套件」並改用 mermaid（概念圖畫成四段相連節點，用語規則
   不變）。架構圖用 mermaid；不手寫套件以外的長 SVG。
-- **自包含、兩處都能看**（同時作 Claude Artifact 發布，並入版控供瀏覽器直接開啟）：
+- **除截圖外自包含、兩處都能看**（同時作 Claude Artifact 發布，並入版控供瀏覽器直接開啟）：
   - 不寫 `<!DOCTYPE>`／`<html>`／`<head>`／`<body>`（Artifact 發布時會包骨架）；
     檔首依序放 `<title>`（2–4 個字詞的功能名稱，不加說明）與 `<style>`。
   - mermaid 圖用 `<div class="mermaid">…</div>`，有 mermaid 圖時檔尾以
     `<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.15.0/mermaid.min.js"></script>`
     載入後 `mermaid.initialize({startOnLoad:true})`。版號**照抄**、不自行改版
     （不存在的版號會 404，圖整頁空白）。外部 script 只允許 cdnjs，其他
-    CSS／字型／圖片一律內嵌。
+    CSS／字型／圖示一律內嵌。
+  - 截圖不轉 base64 內嵌（模型讀 base64 看不到圖，只會花大量 token）：把用到的
+    來源包 `prototype/screens/*.png` 以 `cp` 複製到 `<feature 目錄>/brief/screens/`（同名），
+    頁面以 `<img src="screens/<檔名>">` 引用；`brief/screens/` 只留頁面有引用的檔。
   - 顏色全部定義為 `:root` 的 token，另以
     `@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){…}}` 與
     `:root[data-theme="dark"]{…}` 兩塊覆寫深色值；`body` 明確設定背景色。
   - 手機寬度（約 400px）可讀、頁面無橫向捲動；表格、mermaid 圖與故事板 SVG
     各自放在 `overflow-x:auto` 容器內（套件的 `.pic` 已設 SVG 最小寬 640px，在
     容器內橫向捲動）；side gutter ≥16px。
+  - 截圖一張一列、上下直排，寬度＝內容欄寬（`width:100%;height:auto`），圖下標檔名；
+    不並排、不做 grid 或縮圖牆。要對照實作與 Prototype 時，上下相鄰兩張，不左右並列。
   - 不放下載連結、列印按鈕、表單送出、外部 iframe（Artifact 環境一律無效）。
 - 首次建立 `brief/` 目錄時一併寫入 `<feature 目錄>/brief/README.md`，內容固定：
 
@@ -139,7 +144,7 @@ mermaid 圖時其後接 mermaid 的兩個 `<script>`）。
   本目錄的 HTML 由 sdd-harness 在各人為 review 閘門自動產製，供接手者快速理解
   需求、背景與待決事項。**spec.md（與 plan.md）為唯一權威**，本簡報是衍生的
   中間產物，不一致時以 spec.md 為準並回報 orchestrator 重生本頁。
-  可直接以瀏覽器開啟 `feature-brief.html`（架構圖需網路載入 mermaid）；檔案依 Artifact
+  可直接以瀏覽器開啟 `feature-brief.html`（架構圖需網路載入 mermaid；截圖在 `screens/`）；檔案依 Artifact
   契約不含文件骨架，版面以 Artifact 發布版為準。
   ```
 
@@ -167,9 +172,10 @@ mermaid 圖時其後接 mermaid 的兩個 `<script>`）。
 ## 硬約束
 
 - **寫入範圍只有兩處**：`<專案根>/<feature 目錄>/brief/`（`feature-brief.html`、
-  `README.md`）與 orchestrator 指定的暫存檔路徑（`ruling` 小頁、回報溢出）。
+  `README.md`、`screens/`）與 orchestrator 指定的暫存檔路徑（`ruling` 小頁、回報溢出）。
   **不得**修改 spec.md／plan.md／tasks.md／狀態檔／憲章／產品程式碼；
   發現它們有問題只能寫進回報。
 - 不 `git add`、不 `git commit`。Bash 僅用於唯讀操作
-  （`git -C <專案根> diff`／`log` 看本輪變更、`ls`）。
+  （`git -C <專案根> diff`／`log` 看本輪變更、`ls`），唯一例外是把截圖 `cp` 進
+  `brief/screens/`、`rm` 其中不再引用的檔。
 - 不直接向使用者提問；問題一律以判斷點形式交 orchestrator 轉達。
