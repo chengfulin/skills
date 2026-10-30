@@ -28,7 +28,7 @@
 | 規格與上游資料的一致性 | L1、L5 | 設計稿每個範例都要比對；版型看截圖不抽文字；範圍超標是上游問題，反饋不砍 |
 | 驗證實驗的方法 | L6 | 知道答案的 orchestrator 不能替被測流程出題 |
 | sdd-harness 並行模式（波次） | L7–L14 | 整合測試要認得預期紅燈；依賴、port、共用 CSS／DOM 約定都是 lane 間共用資源；空 diff 的收尾 task 不該獨占一波；verify 要讀狀態檔的 mode |
-| skill 文件與範本的一致性 | L15、L16、L17 | 來源包命名規則與規格範本矛盾；brief-writer 工具與職責不符；交接包 index.md 涵蓋欄不全 |
+| skill 文件與範本的一致性 | L15、L16、L17 | 命名判準只留一處、不寫進受保護的原文；寫大檔的 agent 要有 Edit；交接包涵蓋欄要涵蓋所有錨點類別 |
 | 執行環境 | L18 | sandbox 偶發擋瀏覽器啟動，重跑可過 |
 | sdd-harness 並行模式（修正後重跑） | L19–L26 | 預期紅燈以對應實作是否完成判斷並交給 implementer；呼叫端不在同批時契約變更須相容；首波先建工具鏈；DOM 約定只由產生方登記；lane 用 lane-fix+；W6 全量排除預期紅燈 |
 
@@ -48,36 +48,6 @@
 - 證據：同一階段兩次執行，第一次 prompt 含例子，第二次不含；第二次的 6 個
   判斷點涵蓋原版所有後續裁決。
 - 狀態：未升格（屬實驗方法，不屬任何 skill 的規則）
-
-## L15：來源包的 token 命名規則與規格範本互相矛盾（2026-10-29）
-- 情境：同一實驗，上游是含 Prototype 的來源包，plan 要從 Prototype 導入設計 token。
-- 錯誤行為：`source-package.md` 寫「模式 B：由 plan 依用途命名」，
-  `spec-source-template.md` 寫「模式 B：命名沿用 Prototype」。plan 階段兩邊各有
-  依據，只能交給使用者裁決，最後採混合命名。
-- 正確行為：兩份文件只留一個規則（或明定混合命名的判準），另一份引用它。
-- 證據：plan review 閘門多出一個本不該需要的判斷點。
-- 狀態：未升格
-
-## L16：brief-writer 沒有 Edit，修改大檔只能用 Bash 拼接（2026-10-29）
-- 情境：同一實驗，review 閘門要求修改已產出的導覽簡報；簡報是內嵌截圖的大型
-  HTML。
-- 錯誤行為：`sdd-brief-writer` 的工具只有 Read／Write／Grep／Glob／Bash，Write 要
-  重寫整個大檔，agent 改用 Bash 拼接檔案，違反其定義檔「Bash 僅用於唯讀操作」。
-- 正確行為：給 brief-writer 加 Edit，或讓截圖改成外部檔案引用、HTML 本體保持小，
-  使 Write 重寫可行。
-- 證據：修改簡報的派遣中出現 Bash 寫檔。
-- 狀態：未升格
-
-## L17：交接包 index.md 涵蓋欄缺少「全域規則」「資料關聯性」（2026-10-29）
-- 情境：同一實驗，spec 以 `[SB 全域規則 k]`、`[SB 資料關聯 k]` 錨點引用
-  StoryBoard 的全域段落。
-- 錯誤行為：make-mockup-harness 產出的 `index.md` 涵蓋欄只列 US-nn，機械檢查 8
-  （錨點能在涵蓋欄找到）對這兩類錨點必定失敗，開發端只能改以 AGENTS.md 的錨點表
-  解析，並回寫給 SA。
-- 正確行為：`pack-handoff.sh` 產 `index.md` 時，也把 StoryBoard 的全域規則與資料
-  關聯性等非 US 章節抓進涵蓋欄。
-- 證據：回寫清單中有一筆專為此開的來源缺口。
-- 狀態：未升格
 
 ## L18：sandbox 偶發擋 subagent 啟動瀏覽器（2026-10-29）
 - 情境：同一實驗，validator 在 subagent 內跑多瀏覽器 E2E 抽驗。
@@ -346,3 +316,49 @@
   波次補跑的已完成 story E2E 抓到（見 L21）。
 - 採用改法（獨立 judge 複核後）：不採「只在完成 story 的波次跑 E2E」（會延後已完成 story 的回歸，而 L21 正是靠回歸 E2E 抓到）。改為每波跑全量但排除 expected_red：早期 E2E 自然不跑、後期每波跑已完成 story 的回歸；刪除「expected_red 通過也要記下」。
 - 狀態：已升格 → `skills/sdd-harness/references/implement-loop.md`#W6
+
+## L15：來源包的 token 命名規則與規格範本互相矛盾（2026-10-29）
+- 情境：同一實驗，上游是含 Prototype 的來源包，plan 要從 Prototype 導入設計 token。
+- 錯誤行為：`source-package.md` 寫「模式 B：由 plan 依用途命名」，
+  `spec-source-template.md` 寫「模式 B：命名沿用 Prototype」。plan 階段兩邊各有
+  依據，只能交給使用者裁決，最後採混合命名。
+- 正確行為：兩份文件只留一個規則（或明定混合命名的判準），另一份引用它。
+- 證據：plan review 閘門多出一個本不該需要的判斷點。
+- 採用改法（獨立 judge 複核後）：命名屬 plan 層細節，不放在會抄進 spec、受機械檢查 7
+  保護的五條原文；第 4 條模式 B 只寫「清單與命名見 research.md」，命名判準只留在
+  來源包手冊：`:root` 有變數名的沿用，只有色碼等無名值的由 plan 依用途命名，兩套各自
+  成組。範本升 v5，v4 舊文在檢查 7 也視為原文，避免進行中的 feature 誤判。
+- 狀態：已升格 → `skills/sdd-harness/references/source-package.md`#3. 步驟 5 plan、
+  `skills/sdd-harness/references/spec-source-template.md`#權威劃分 4（v5）
+
+## L16：brief-writer 沒有 Edit，修改大檔只能用 Bash 拼接（2026-10-29）
+- 情境：同一實驗，review 閘門要求修改已產出的導覽簡報；簡報是內嵌截圖的大型
+  HTML。
+- 錯誤行為：`sdd-brief-writer` 的工具只有 Read／Write／Grep／Glob／Bash，Write 要
+  重寫整個大檔，agent 改用 Bash 拼接檔案，違反其定義檔「Bash 僅用於唯讀操作」。
+- 正確行為：給 brief-writer 加 Edit，或讓截圖改成外部檔案引用、HTML 本體保持小，
+  使 Write 重寫可行。
+- 證據：修改簡報的派遣中出現 Bash 寫檔。
+- 採用改法（獨立 judge 複核後，截圖部分經使用者裁決）：tools 加 Edit；「非首輪整檔重寫、
+  不拼接片段」改為局部修改用 Edit、大幅改版才整檔 Write，不以 Bash 寫檔。根因是截圖以
+  base64 內嵌：模型讀 base64 看不到圖、只花大量 token，Read 也會截斷長行。改為把用到的
+  截圖 `cp` 到 `brief/screens/` 以相對路徑引用，發布時用多檔發布一併上傳；截圖一張一列
+  直排（原本「並列」對照讓截圖小到看不清）。
+- 狀態：已升格 → `skills/sdd-harness/agents/sdd-brief-writer.md`#輸入（非首輪）、#風格與技術契約、#硬約束、
+  `skills/sdd-harness/references/review-gate.md`#閘門程序 3、`skills/sdd-harness/references/source-package.md`
+
+## L17：交接包 index.md 涵蓋欄缺少「全域規則」「資料關聯性」（2026-10-29）
+- 情境：同一實驗，spec 以 `[SB 全域規則 k]`、`[SB 資料關聯 k]` 錨點引用
+  StoryBoard 的全域段落。
+- 錯誤行為：make-mockup-harness 產出的 `index.md` 涵蓋欄只列 US-nn，機械檢查 8
+  （錨點能在涵蓋欄找到）對這兩類錨點必定失敗，開發端只能改以 AGENTS.md 的錨點表
+  解析，並回寫給 SA。
+- 正確行為：`pack-handoff.sh` 產 `index.md` 時，也把 StoryBoard 的全域規則與資料
+  關聯性等非 US 章節抓進涵蓋欄。
+- 證據：回寫清單中有一筆專為此開的來源缺口。
+- 採用改法（獨立 judge 複核後）：`pack-handoff.sh` 計算 StoryBoard「全域規則」「資料關聯性」
+  兩節的頂層條列數，涵蓋欄加「全域規則 1–N、資料關聯 1–M」（用錨點字面，0 條不列）；
+  取證方式欄、交接包 AGENTS.md 讀取順序、handoff.md 與 workflow-stages.md 的完成條件同步。
+  sdd-harness 的機械檢查 8 不動。
+- 狀態：已升格 → `skills/make-mockup-harness/scripts/pack-handoff.sh`（產 `index.md`）、
+  `skills/make-mockup-harness/references/handoff-templates/AGENTS.template.md`#讀取順序

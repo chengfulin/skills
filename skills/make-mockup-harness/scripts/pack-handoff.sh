@@ -86,6 +86,12 @@ fill "$tpl/handoff-notes.template.md" "$feat/handoff-notes.md"
 size_of() { wc -c < "$1" | awk '{b=$1; if (b<1024) printf "%d B", b; else if (b<1048576) printf "%.0f KB", b/1024; else printf "%.1f MB", b/1048576}'; }
 # grep 沒命中回 1，在 pipefail 下會讓整個賦值失敗、script 中止，所以各加 || true 讓 fallback 生效。
 sb_us="$( { grep -E '^#+ *US-[0-9]+' "$feat/storyboard.md" || true; } | grep -v '已移除' | grep -o -E 'US-[0-9]+' | sort -u | paste -sd '、' - || true)"
+# 「全域規則」「資料關聯性」是無編號條列，錨點 [SB 全域規則 k]／[SB 資料關聯 k] 的 k＝條列序號；計數只算頂層條列（> 指引行不算）
+sb_items() { awk -v h="## $1" '$0 == h { f = 1; next } /^## / { f = 0 } f && /^([-*]|[0-9]+\.) / { n++ } END { print n + 0 }' "$feat/storyboard.md"; }
+sb_gr=$(sb_items 全域規則); sb_dr=$(sb_items 資料關聯性)
+sb_cov="${sb_us:-$fill_us}"
+[[ $sb_gr -gt 0 ]] && sb_cov+="、全域規則 1–$sb_gr"
+[[ $sb_dr -gt 0 ]] && sb_cov+="、資料關聯 1–$sb_dr"
 proto_pages="$( { grep -o -E 'data-page="S[0-9]+[^"]*"' "$feat/prototype/index.html" || true; } | sed -E 's/^data-page="([^"]*)"$/\1/' \
   | sort -u | sort -t S -k2,2n | paste -sd '、' - || true)"
 fill_us='{填：US-nn 清單}'; fill_pages='{填：S<n> 畫面清單（舊 Claude Design 單檔無 data-page，依 brief 畫面清單填）}'
@@ -103,7 +109,7 @@ fill_ref='{填：涵蓋的章節或 US}'
   echo "| 路徑 | 用途 | 媒材 | 大小 | 權威 | 取證方式 | 涵蓋（US／畫面／章節） |"
   echo "|---|---|---|---|---|---|---|"
   echo "| \`handoff-notes.md\` | 交接說明 | markdown | — | SA／PM 交接內容 | Read 全文 | US 對照、AC 原文、功能需求候選、已定案決策、範圍外、補問清單（PM 答案）、截圖索引 |"
-  echo "| \`storyboard.md\` | 需求與業務規則 | markdown | $(size_of "$feat/storyboard.md") | 業務規則 | Read；以 \`### US-nn\` 標題定位，只讀用到的 US 與全域規則 | ${sb_us:-$fill_us} |"
+  echo "| \`storyboard.md\` | 需求與業務規則 | markdown | $(size_of "$feat/storyboard.md") | 業務規則 | Read；以 \`### US-nn\` 標題定位，只讀用到的 US、全域規則與資料關聯性 | ${sb_cov} |"
   echo "| \`prototype/index.html\` | 可操作的 mockup | html（單檔） | $proto_size | 呈現 | **不整份 Read**：看截圖、限量 grep（\`grep -o -m 5\`）、或本機 http server 開啟操作 | ${proto_pages:-$fill_pages} |"
   echo "| \`prototype/screens/*.png\` | 畫面截圖 | png（1440×900 full-page） | — | 衍生自 Prototype，無獨立權威 | Read 看圖；檔名對應見 \`handoff-notes.md\`「截圖索引」 | 依截圖索引 |"
   echo "| \`prototype/export.json\` | 凍結資訊 | json | $(size_of "$feat/prototype/export.json") | — | Read | 來源 artifact、版本 id、sha256 |"
@@ -133,6 +139,7 @@ echo "  prototype/index.html $sha_proto  (= export.json)"
 echo
 echo "index.md 涵蓋欄："
 echo "  storyboard US：${sb_us:-（未抓到，待填）}"
+echo "  storyboard 全域規則：${sb_gr} 條、資料關聯：${sb_dr} 列"
 echo "  prototype 畫面：${proto_pages:-（未抓到 data-page，待填）}"
 echo
 echo "尚待 orchestrator 完成（見 references/handoff.md）："

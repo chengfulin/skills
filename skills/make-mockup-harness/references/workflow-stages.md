@@ -90,7 +90,7 @@
 ### §7 交接開發
 - `handoff/v<N>/` 含 `index.md`、`AGENTS.md`、`CLAUDE.md`、`handoff-notes.md`，`pack-handoff.sh` 的 `check_*` 全數 ok。
 - `prototype/screens/` 至少每個畫面一張，`handoff-notes.md` 截圖索引與檔案一一對應。
-- `index.md` 表格列無殘留待填欄，「涵蓋」欄的 US 與畫面清單與 storyboard、brief 一致。
+- `index.md` 表格列無殘留待填欄，「涵蓋」欄的 US、全域規則與資料關聯條數、畫面清單與 storyboard、brief 一致。
 - `handoff-notes.md` 無殘留 `{…}` 待填欄位與 `<!-- -->` 指引；US 對照 Priority 與補問清單答案已由 PM 填齊。
 - 狀態檔 `stage: handed-off`，`versions[N-1].handoff.date`、`sha256` 填入；`revisions.md` v<N> 列註記已交付。
 

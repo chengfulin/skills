@@ -40,11 +40,15 @@ SKILL.md 通用規則 7 引用本文件；**閘門執行程序以本文件為唯
    Agent 呼叫失敗 → 以原 prompt 重派一次；仍失敗 → **簡報不阻塞流程**：改以純文字
    重點條列（user story 與驗收要點／架構決策與偏離／發現表）完成本閘門，
    並明確告知使用者「本輪簡報產製失敗，改用文字摘要」。
-3. **發布**：Read 該 HTML（Artifact 工具規定發布前必須通讀自己沒寫的檔案；
-   agent 契約限 ≤400 行）→ Artifact 工具 `publish`，`file_path`＝該檔絕對路徑，
+3. **發布**：Read 該 HTML 與 `brief/screens/` 的每張截圖（Artifact 工具規定發布前必須
+   通讀自己沒寫的檔案；agent 契約限 ≤400 行，截圖以影像讀取，不內嵌 base64）→ Artifact 工具發布，
    `description` 一句話（feature 名＋本輪觸發點），首次另給 `icon`（如 `map`）。
+   - 有截圖時用多檔發布（如 `publish_files`）：HTML 以 `index.html`、每張截圖以
+     `screens/<檔名>` 一起發布，頁面的相對路徑才找得到圖。工具只能發布單一檔案時照常
+     發布 HTML，並告知使用者發布版不顯示截圖，附本機 `feature-brief.html` 路徑供對照。
    - 同一 session 內以**同一檔案路徑**再發布＝更新同一 URL（`clarify`／`plan`／
-     `analyze` 皆如此）。
+     `analyze` 皆如此）；多檔發布則帶上次回傳的 artifact 識別（slug 或 URL）與版本更新，
+     未變動的截圖可不重送。
    - 跨 session（`resume` 後）：讀狀態檔 `brief.artifact_url`，先 Artifact `read`
      該 URL，再 `publish` 時帶 `url` 更新原頁；沒有該欄位或 read 失敗 → 發布為
      新 artifact，並更新狀態檔。

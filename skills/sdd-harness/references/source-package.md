@@ -39,7 +39,7 @@
   - 「已定案決策」預填進 Clarifications；「範圍外」寫進 Assumptions。
   - 「補問清單」已有 PM 答案的直接採用並記入 Clarifications；沒有答案的寫 `[NEEDS CLARIFICATION: …]`，留給步驟 4。
 - 產 spec 後自行跑一次規格來源段的機械檢查 1～9，不過就先修。
-- 人為 review 閘門：簡報附 `prototype/screens/` 截圖，讓 reviewer 對照。
+- 人為 review 閘門：簡報附 `prototype/screens/` 截圖（複製到 `brief/screens/` 引用、一張一列直排，見 `sdd-brief-writer`），讓 reviewer 對照。
 
 ## 2. 步驟 4 clarify
 
@@ -61,12 +61,12 @@
 - plan.md 新增「前端設計（依 Prototype v<N>）」節，內容落在 spec-kit 既有產物，不另立新檔：
   - `research.md`「設計 token」節：以 Playwright 讀 Prototype 的 computed style 萃取色彩、字級、間距、圓角
     （artifact 製作的 mockup 在 `:root` 有色彩與字型變數，可作命名參考；舊 Claude Design 匯出檔只有 hex；都以 computed style 為準）。
-    模式 A：對應到專案現有 token，對不到的登記偏離。模式 B：由 plan 依用途命名。
+    模式 A：對應到專案現有 token，對不到的登記偏離。模式 B：Prototype `:root` 有變數名的 token 沿用其名；只有色碼等無名值的，由 plan 依用途命名，兩套命名各自成組、不交錯；對應表寫入 research.md。
   - `contracts/ui-contracts.md`：逐畫面列「區塊順序、元件對照、逐字文案與狀態、畫面對照（S<n> → 路由 → US<k> → 截圖）、偏離」。
     **文案從 Prototype DOM 抽取**（Playwright `innerText`）；偏離回填 spec 的 D-ID。
   - Prototype 假資料轉成前端 fixture／mock 資料層，頁面只能經資料存取層取用。
   - 規劃一支「Prototype 並列比對」E2E：依 `handoff-notes.md` 截圖索引重現每個狀態，輸出同名截圖到 `test-results/compare/`，並以 DOM 斷言檢查區塊順序與逐字文案。
-- 人為 review 閘門：簡報並列 Prototype 截圖與 ui-contracts 的版面，偏離逐條確認。
+- 人為 review 閘門：簡報把 Prototype 截圖與 ui-contracts 的版面上下相鄰對照（不左右並列），偏離逐條確認。
 
 ## 4. 步驟 6 tasks、步驟 7 analyze
 
