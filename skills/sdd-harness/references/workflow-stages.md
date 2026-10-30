@@ -263,7 +263,8 @@ pair 數與衝突 pair 數；`by_type` 的鍵取 `寫入`／`相依`／`資源`�
 `waves_done`／`current_wave`（僅並行模式）：`task-plan.py next` 排出波次時寫入
 `current_wave`（`k` 波次序號、`units` 各 unit 的 phase／任務／寫入集合／`fix`（修正
 邊界的延伸：同 phase 先前波次已完成 task 的寫入集合）、`completes` 本波次完成的
-phase、`expected_red` 預期紅燈的測試檔、各 unit 的 `port` 與閘門用的 `gate_ports`），`task-plan.py close` 在波次 commit 前移除它並把 `waves_done`
+phase、`expected_red` 預期紅燈的測試檔與其中已 commit 的 `expected_red_base`、各 unit 的
+`port`、`lane_fix`（fix 扣掉同波次其他 lane 的 W 與 R）與閘門用的 `gate_ports`），`task-plan.py close` 在波次 commit 前移除它並把 `waves_done`
 加 1——所以**已 commit 的狀態檔不會有 `current_wave`**，出現在 dirty 狀態檔裡＝
 該波次進行中。
 

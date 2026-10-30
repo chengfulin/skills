@@ -115,11 +115,14 @@ data-model.md、`contracts/` 推得；既有檔案與 symbol 照上方步驟 2�
   `data-testid`、DOM 結構；識別寫選擇器）。識別寫路徑或資源名稱。
   寫入集合不重疊的 task 仍可能語意衝突：兩個畫面各自實作設計稿的同一個 class 會重複
   套用，全域 class 兩邊都以為對方會做就沒人做。所以同一個共用 class 只該由一個 task
-  實作：實作它的 task 登記 `樣式:<class>`，只使用它的 task 把實作方寫進 Dep；
-  E2E 斷言依賴別的 task 產生的 DOM 時，登記 `DOM 約定:<選擇器>` 並把產生方寫進 Dep。
+  實作：實作它的 task 登記 `樣式:<class>`，只使用它的 task 把實作方寫進 Dep。
+  `DOM 約定` 同理，只由**產生**該 DOM 的 task 登記；斷言它的一方（E2E、元件測試、
+  依賴它的程式）不登記，只把產生方寫進 Dep；只定義定位器、不斷言的 E2E fixture 兩者
+  都不必（定位器不需要 DOM 先存在）。
   找不到任何 task 負責的共用 class 或 DOM 約定，列進回報的「沒有 task 負責的必要改動」。
 - **C（契約變更）**：`symbol@路徑`——interface／abstract class 新增或改簽名的
-  method、建構子或 DI 參數增減、登錄點新增項目。
+  method、建構子或 DI 參數增減、元件 props 增減或改必填、登錄點新增項目。已存在的
+  呼叫端檔案一併放進該 task 的 R（reviewer 與 implementer 據此判斷要不要寫成向後相容）。
 - **Dep（相依）**：必須先完成的 task ID。來源只有兩種：tasks.md 明文（如「引自
   T022」「T005 MUST 早於 T006」），或程式上的實質需要（要用的 symbol 由該 task
   建立）。他範圍的 task 直接寫 ID，**排在後面的 task 也照寫**——例如本 story 的
@@ -139,7 +142,9 @@ data-model.md、`contracts/` 推得；既有檔案與 symbol 照上方步驟 2�
 - **Kind（類型，可省略）**：
   - `test`＝測試先行的測試 task（tasks.md 的 Tests 小節、或描述寫明先寫測試並確認
     失敗）——對應實作完成前，這些測試本來就該失敗。腳本據此算出每個波次的「預期
-    紅燈」，整合測試不把它們當失敗。
+    紅燈」，整合測試不把它們當失敗。腳本以「同範圍中寫入集合與該測試 R 相交的 task」
+    判定對應實作，所以 R 要列出被測的實作檔；W 只放測試檔，測試輔助檔（工廠、fixture）
+    若由同一 task 建立仍寫進 W，但不會被列為預期紅燈。
   - `gate`＝收尾 task：執行全部測試／lint／型別檢查並修到通過這類寫入集合事先無法
     預知者。W 留空、R 留空、Conf 照實填（**不要**為此標低）；它要收尾的範圍超出
     本 phase 時，Dep 寫那些 phase 標籤。腳本不拿它做集合判定，排在同 phase 最後。

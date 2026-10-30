@@ -34,6 +34,8 @@ MAX_LANES, MAX_LANE_FILES = 3, 12
 # 自動採用並行模式的門檻：波次模擬的估計加速、分析基礎；另要求波次數不多於 phase 數
 # （每個波次都要跑一輪整合測試、審查與驗收，波次比 phase 多時總成本高於依序模式）
 MIN_SPEEDUP = 1.5
+# 測試檔判別（預期紅燈只列測試檔，不列測試輔助檔）
+TEST_FILE = re.compile(r'(\.(test|spec)\.[^/]+$|_test\.[^/]+$|(^|/)test_[^/]+\.py$|\.bats$)')
 # E2E 的 port 分配基準（環境變數 SDD_PORT_BASE 可改）：unit j 用 基準+j，閘門用 基準+10 起
 PORT_BASE = int(os.environ.get('SDD_PORT_BASE', '4100'))
 
@@ -390,6 +392,10 @@ def next_wave(args):
     if not lanes:
         print('error=no_progress：排不出下一個波次（前驅關係有誤）')
         sys.exit(3)
+    reason = ''
+    if args.setup_first and 'Setup' in lanes:
+        # 專案根還沒有可用的測試工具鏈：先只做 Setup，其他 lane 在沒有工具鏈的 worktree 裡無法驗證
+        lanes, reason = {'Setup': lanes['Setup']}, 'toolchain'
     picked = {t for v in lanes.values() for t in v}
     completes = [ph for ph in lanes if all(t in picked for t in pending if T[t]['phase'] == ph)]
     units = {}
@@ -399,18 +405,33 @@ def next_wave(args):
         fix = [x for x in dict.fromkeys(x for t in plan['order'] if t in done and T[t]['phase'] == ph
                                         for x in T[t]['W']) if x not in W]
         units[f'u{n}'] = {'phase': ph, 'tasks': ts, 'W': W, 'fix': fix, 'port': PORT_BASE + n}
-    # 預期紅燈：已寫好（已完成或本波次會做）的測試先行 task，所屬 phase 在本波次結束後仍有
-    # task 未完成——對應實作還沒做，這些測試檔失敗屬預期
+    # lane 內可用的修正邊界：fix+ 扣掉同波次其他 lane 的 W 與 R（含收尾 task 的 lane 在 worktree 裡修正時用；
+    # 完整的 fix+ 只用於專案根的 W6／W8 修正）
+    for u, v in units.items():
+        others = [x for o, w in units.items() if o != u for t in w['tasks'] for x in T[t]['W'] + T[t]['R']]
+        v['lane_fix'] = [f for f in v['fix'] if not any(match(f, x) for x in others)]
+    # 預期紅燈：已寫好（已完成或本波次會做）的測試先行 task，其對應實作在本波次結束後仍未完成。
+    # 對應實作＝同 phase、非 test／gate、寫入集合與該測試讀取集合相交的 task；找不到（E2E 常只讀
+    # fixture）時退回「所屬 phase 仍有未完成 task」。只列測試檔。
     after = done | picked
     open_ph = {T[t]['phase'] for t in pending if t not in picked}
-    red = list(dict.fromkeys(x for t in plan['order'] if t in after and T[t].get('Kind') == 'test'
-                             and T[t]['phase'] in open_ph for x in T[t]['W']))
+
+    def still_red(t):
+        impls = [i for i, v in T.items() if v['phase'] == T[t]['phase'] and v.get('Kind') not in ('test', 'gate')
+                 and first_hit(v['W'], T[t]['R'])]
+        return any(i not in after for i in impls) if impls else T[t]['phase'] in open_ph
+    red_tasks = [t for t in plan['order'] if t in after and T[t].get('Kind') == 'test' and still_red(t)]
+    red = list(dict.fromkeys(x for t in red_tasks for x in T[t]['W'] if TEST_FILE.search(x)))
+    # 已 commit 的部分（worktree 裡看得到的），附給 implementer
+    red_base = list(dict.fromkeys(x for t in red_tasks if t in done for x in T[t]['W'] if TEST_FILE.search(x)))
     k = impl.get('waves_done', 0) + 1
     gates = len(units) + sum(1 for ph in completes if ph.startswith('US'))  # reviewer 每 unit、validator 每 story
     impl['current_wave'] = {'k': k, 'units': units, 'completes': completes, 'expected_red': red,
+                            'expected_red_base': red_base,
                             'gate_ports': [PORT_BASE + 10 + i for i in range(gates)]}
     save_state(args.state, st)
-    print(f"wave={k} units={len(units)} completes={','.join(completes) or '無'}")
+    print(f"wave={k} units={len(units)} completes={','.join(completes) or '無'}"
+          + (f' reason={reason}' if reason else ''))
     print_wave(impl['current_wave'])
 
 
@@ -419,7 +440,10 @@ def print_wave(cur):
         print(f"{u} | {v['phase']} | {','.join(v['tasks'])} | W={','.join(v['W'])}")
         if v.get('fix'):
             print(f"{u} fix+={','.join(v['fix'])}")
+        if v.get('lane_fix'):
+            print(f"{u} lane-fix+={','.join(v['lane_fix'])}")
     print(f"expected_red={','.join(cur.get('expected_red', [])) or '無'}")
+    print(f"expected_red_base={','.join(cur.get('expected_red_base', [])) or '無'}")
     ports = ' '.join(f"{u}={v['port']}" for u, v in cur['units'].items() if 'port' in v)
     if ports:
         print(f"ports={ports} gates={','.join(map(str, cur.get('gate_ports', [])))}")
@@ -552,6 +576,8 @@ def main():
     n.add_argument('--tasks', required=True)
     n.add_argument('--plan', required=True)
     n.add_argument('--state', required=True)
+    n.add_argument('--setup-first', action='store_true',
+                   help='專案根還沒有可用的測試工具鏈時：Setup 有未完成 task 就只排 Setup 一條 lane')
     cl = sub.add_parser('close')
     cl.add_argument('--state', required=True)
     m = sub.add_parser('mode')

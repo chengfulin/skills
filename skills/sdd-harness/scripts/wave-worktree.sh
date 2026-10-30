@@ -23,6 +23,8 @@ cmd="${1:-}"; root="${2:-}"; nnn="${3:-}"
 [ -n "$cmd" ] && [ -n "$root" ] && [ -n "$nnn" ] || { sed -n '2,14p' "$0"; exit 2; }
 WT_DIR="$BASE/sdd-wt-$nnn"
 G() { git -c core.quotepath=off -C "$@"; }
+EXCL=$(G "$root" rev-parse --path-format=absolute --git-path info/exclude)
+EXCL_TAG="# sdd-wave $nnn"
 
 # 版控中有 manifest、專案根卻沒有對應依賴目錄的位置（每行一個缺的目錄）。
 # worktree 只 symlink 專案根已存在的依賴目錄；缺的話 lane 會在 worktree 自己安裝，
@@ -59,7 +61,10 @@ add)
                 .codegraph/*|*/.codegraph/*) ;;
                 */) d="${p%/}"; case "$(basename "$d")" in
                         node_modules|.venv|venv)
-                            mkdir -p "$wt/$(dirname "$d")"; ln -s "$root/$d" "$wt/$d"; echo "$d" >> "$wt.links" ;;
+                            mkdir -p "$wt/$(dirname "$d")"; ln -s "$root/$d" "$wt/$d"; echo "$d" >> "$wt.links"
+                            # 結尾斜線的 ignore 規則（node_modules/）不匹配 symlink；info/exclude 是全 worktree
+                            # 共用的，在規則前一行放標記（ignore 規則不支援行尾註解），clean 時連同下一行刪除
+                            grep -qxF "/$d" "$EXCL" 2>/dev/null || printf '%s\n/%s\n' "$EXCL_TAG" "$d" >> "$EXCL" ;;
                     esac ;;
                 *) if [ -f "$root/$p" ] && [ "$(wc -c < "$root/$p")" -lt 1048576 ]; then
                        mkdir -p "$wt/$(dirname "$p")"; cp -p "$root/$p" "$wt/$p"
@@ -120,6 +125,10 @@ clean)
         rm -rf "$WT_DIR"
     fi
     G "$root" worktree prune
+    if [ -f "$EXCL" ]; then
+        awk -v tag="$EXCL_TAG" '$0 == tag { skip = 1; next } skip { skip = 0; next } { print }' "$EXCL" > "$EXCL.tmp"
+        mv "$EXCL.tmp" "$EXCL"
+    fi
     G "$root" for-each-ref --format='%(refname:short)' "refs/heads/sdd-wave/$nnn-*" \
         | while IFS= read -r br; do G "$root" branch -q -D "$br"; done
     echo "clean=ok"

@@ -28,8 +28,10 @@ effort: high
 - **並行規劃集合**（並行模式提供）：該 unit 各 task 的寫入集合（W）與契約變更（C），
   取代影響邊界報告作為步驟 5 漣漪檢查的依據——契約變更的呼叫端若不在本 unit 的
   diff 內，確認它在 working tree 裡已同步（其他 unit 可能改了它）。附了 `樣式`／
-  `DOM 約定` 時，確認本 unit 只實作登記給自己的共用 class，用到的 DOM 約定與實作方
-  一致（重複套用的容器、沒人實作的全域 class 都是 MUST-FIX）。
+  `DOM 約定` 時，確認本 unit 只實作登記給自己的共用 class 與 DOM；本 unit 斷言或使用
+  的 DOM，依 R／Dep 所指產生方的檔案核對選擇器是否一致（重複套用的容器、沒人實作的
+  全域 class 都是 MUST-FIX）。C 改了既有呼叫端用到的簽名、而呼叫端不在本 unit 時，
+  變更須向後相容，否則 MUST-FIX。
 - **E2E_PORT**（並行模式提供）：執行起 server 的測試時帶環境變數 `E2E_PORT=<port>`。
 - **影響邊界報告**（可能提供）：sdd-impact-analyzer 在實作前產出的預期變更範圍，
   供步驟 5 的漣漪檢查比對。
