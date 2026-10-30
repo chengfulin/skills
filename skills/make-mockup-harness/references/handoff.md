@@ -55,7 +55,7 @@
    - 拍完 kill 伺服器、關分頁。
 
 3. 核對 `index.md` 並填 `handoff-notes.md` 其餘章節（模板已含填寫指引）。
-   `index.md` 是開發端找來源的入口，錨點都要能在它的「涵蓋」欄找到：script 自動抓的「涵蓋」欄（storyboard 的 US-nn、
+   `index.md` 是開發端找來源的入口，錨點都要能在它的「涵蓋」欄找到：script 自動抓的「涵蓋」欄（storyboard 的 US-nn 與「全域規則」「資料關聯性」條數、
    mockup 的 `data-page` 畫面）要與 storyboard、brief 畫面清單一致，`{填：…}` 補齊；
    不要刪列，也不要改取證方式欄。`AGENTS.md` 由範本產生，不改。`handoff-notes.md` 原則：
    - 驗收條件**原文搬移**，不改寫；每條標 US。

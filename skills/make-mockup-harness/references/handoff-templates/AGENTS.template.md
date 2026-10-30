@@ -7,7 +7,7 @@
 
 1. `index.md`：文件索引。每個檔的用途、權威、取證方式與涵蓋範圍；開任何來源檔之前先查它，依「取證方式」開檔，只讀「涵蓋」指到的段落。
 2. `handoff-notes.md`：全文讀。US 對照與優先序、驗收條件原文、功能需求候選、已定案決策、範圍外、補問清單（PM 已答）、截圖索引。
-3. 做某個 User Story 時：`storyboard.md` 只讀該 `### US-nn` 與「全域規則」，畫面看截圖索引列出的 `prototype/screens/` 檔。
+3. 做某個 User Story 時：`storyboard.md` 只讀該 `### US-nn`、「全域規則」與「資料關聯性」，畫面看截圖索引列出的 `prototype/screens/` 檔。
 
 ## 全程規則
 
