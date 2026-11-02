@@ -76,7 +76,7 @@ def main():
         print('找不到 headless Chrome；回報「未實看」。', file=sys.stderr)
         return 2
     os.makedirs(a.vdir, exist_ok=True)
-    html = open(a.index, encoding='utf-8').read()
+    html = re.sub(r'^\s*<!doctype html>\s*', '', open(a.index, encoding='utf-8').read(), flags=re.I)
     copy = os.path.join(a.vdir, 'index.html')
     open(copy, 'w', encoding='utf-8').write(INJECT + html)
     url = 'file://' + os.path.abspath(copy)
