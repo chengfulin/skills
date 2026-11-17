@@ -1,6 +1,6 @@
 # SDD 憲章：Shell Script 延伸（SH）
 
-> 版本：5.6.0｜本文件為 [`constitution.md`](constitution.md) 之延伸，**須與核心原則（CP）、治理（GV）一併適用**。
+> 版本：5.7.0｜本文件為 [`constitution.md`](constitution.md) 之延伸，**須與核心原則（CP）、治理（GV）一併適用**。
 > RFC 2119 用語定義見核心文件。條款前綴為 `§SH-`。
 
 > **邊界聲明**：本檔只規範 Shell Script 的**應用面**（健全性、安全、可用性、測試）。若以容器化工具服務形式部署，部署與基礎設施見 [`constitution-deployment.md`](constitution-deployment.md)（DEP）。

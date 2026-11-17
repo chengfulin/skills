@@ -115,7 +115,7 @@ TR、風險分級、API/FE/SH、SVC、DEP 可先瀏覽，但**本階段不作為
   - Standard：unit + contract + 關鍵 integration
   - Internal：核心 unit + smoke
   - Experimental：PR 描述驗收即可；具核心商業邏輯者仍依 §CP-4 補最小單元測試
-- **案例設計**（§TR-7）：測試案例以輸入空間分割（ISP）為優先設計方法——核心邏輯單元測試 Critical / Standard MUST、Internal / Experimental SHOULD；由驗收條件推導之測試各級 SHOULD。涵蓋範圍依分級：Critical / Standard / Internal 為**完整範圍**，Experimental 為**主要流程範圍**（如 POC 只涵蓋展示情境）。預期結果以 spec 為據（Critical MUST，Standard / Internal SHOULD）。
+- **案例設計**（§TR-7）：測試案例以輸入空間分割（ISP）為優先設計方法——核心邏輯單元測試 Critical / Standard MUST、Internal / Experimental SHOULD；由驗收條件推導之測試各級 SHOULD。涵蓋範圍依分級：Critical / Standard / Internal 為**完整範圍**，Experimental 為**主要流程範圍**（如 POC 只涵蓋展示情境）。涵蓋準則以 **Base Choice** 為下限。關鍵資料處理流程另對有效值疊加 **Pairwise**，無效值仍一次只放一個；判定方式與各級強度見 §TR-7。預期結果以 spec 為據（Critical MUST，Standard / Internal SHOULD）。
 - 覆蓋率僅作輔助參考（API 建議 statement ≥ 80% / branch ≥ 60%），**不得作為唯一品質門檻**。
 
 ### 參考（暫不強制）
