@@ -1,6 +1,6 @@
 # Spec-Driven Development 憲章（核心通用版）
 
-> 版本：5.6.0｜狀態：生效中｜適用範圍：所有應用類型與服務風險分級
+> 版本：5.7.0｜狀態：生效中｜適用範圍：所有應用類型與服務風險分級
 >
 > 本文件為**最高層級規範**。所有 spec、plan、task 與實作皆須遵循本憲章。
 > 當下層文件（spec / plan / 程式碼）與本憲章衝突時，**以本憲章為準**。
@@ -192,14 +192,31 @@
 - **ISP 步驟**：
   1. 識別輸入空間**特徵（characteristics）**：單元層為參數、相依狀態、環境設定等會影響行為的輸入；驗收層為操作角色、輸入資料類別、前置 / 系統狀態、外部相依回應等，**SHOULD** 取自驗收條件之前置與輸入（如 Given-When-Then），分割表 **SHOULD** 可追溯至驗收條件編號（§CP-1）。
   2. 將每個特徵分割為**互斥區塊（blocks）**；分割方式**視特徵型別適用**——數值 / 有序型涵蓋有效值、無效值與邊界值；布林 / 列舉等離散型以等值類劃分即可。
-  3. 依下列**涵蓋範圍**選擇涵蓋準則。完整範圍下，特徵間**互動風險高**（如旗標 × 狀態的組合共同決定行為）時，該組特徵 **SHOULD** 升級至 Pairwise 或 Base Choice；E2E 層因組合成本高，不建議採 Pairwise。
+  3. 依下列**涵蓋範圍**選擇涵蓋準則。分割表 **SHOULD** 註明 **base**：各特徵取最典型之有效 block（通常即最常見之有效路徑）；每個案例自 base 只變動一個特徵。關鍵資料處理流程另依下方「關鍵資料處理流程（Pairwise）」疊加組合涵蓋。
 
 - **涵蓋範圍（依分級）**：
 
   | 範圍 | 適用分級 | 特徵 | blocks | 涵蓋準則 | 省略記錄 |
   |------|---------|------|--------|---------|---------|
-  | **完整範圍** | Critical / Standard / Internal | 所有會影響行為的特徵 | 有效值、無效值、邊界值 | **Each Choice** 為下限（升級見步驟 3）| 有意省略之 block **SHOULD** 逐項註明理由 |
-  | **主要流程範圍** | Experimental | 僅主要流程涉及之特徵 | 僅主要流程情境內之 blocks，加上該流程中可能觸發之錯誤 | **Base Choice**（以主要流程為 base，每次只變動一個特徵）或 **Each Choice**，**SHOULD** 於分割表註明所選 | 範圍外情境於 spec / README **一次性宣告**即可，無須逐 block 說明 |
+  | **完整範圍** | Critical / Standard / Internal | 所有會影響行為的特徵 | 有效值、無效值、邊界值 | **Base Choice** 為下限（關鍵資料處理流程另疊加 Pairwise，見下）| 有意省略之 block **SHOULD** 逐項註明理由 |
+  | **主要流程範圍** | Experimental | 僅主要流程涉及之特徵 | 僅主要流程情境內之 blocks，加上該流程中可能觸發之錯誤 | **Base Choice**（以主要流程為 base，每次只變動一個特徵）| 範圍外情境於 spec / README **一次性宣告**即可，無須逐 block 說明 |
+
+  涵蓋準則之要求**隨 ISP 採用強度**：ISP 為 SHOULD 之處（如 Internal 核心單元、各級驗收層），Base Choice 下限同為 SHOULD。
+
+- **關鍵資料處理流程（Pairwise）**：在 Base Choice 之上疊加組合涵蓋。
+  - **判定**：關鍵資料指 §TR-5 所列之**資料範圍**（權限變更、機密操作，或安全敏感 / 商務關鍵資料之新增 / 修改 / 刪除）；§TR-5 之「限後端」僅限定審計日誌義務，**不限定**本項，前端與 Shell 之相同邏輯亦適用。以**單一受測單元**（函式 / use case / 端點）為判定單位，會變更上述資料者即適用；適用與否 **SHOULD** 於 spec 或分割表標註「關鍵資料處理流程：是 / 否」並註明依據。
+  - **有效 blocks**（含有效邊界值）以 **Pairwise** 組合（任兩特徵之有效 block 組合至少各出現一次）：
+
+    | 測試層級 | Critical | Standard | Internal | Experimental |
+    |---------|:--------:|:--------:|:--------:|:------------:|
+    | 單元層 | MUST | SHOULD | MAY | —（維持主要流程範圍）|
+    | 整合層 | SHOULD | SHOULD | MAY | — |
+
+    整合層僅對該流程**對外可觀察之輸入特徵**做 Pairwise，內部狀態組合不重複展開；E2E 層因組合成本高，不建議採 Pairwise。
+  - **無效 blocks** 不納入 Pairwise 組合，仍依 Base Choice **一次只放一個**無效值於 base 上，避免多個錯誤互相遮蔽。
+  - Pairwise **不取代** Base Choice：兩者案例聯集即為該流程之涵蓋。
+  - 不可行之有效組合（如 `角色=訪客` × `動作=刪除`）**SHOULD** 以約束（constraints）排除並於分割表註明；組合 **SHOULD** 以工具產生（見 tech-standards）。
+  - 非關鍵資料流程但特徵間**互動風險高**（如旗標 × 狀態共同決定行為）者，該組特徵 **SHOULD** 比照採 Pairwise。
 
   「主要流程」依 Experimental 型態界定：POC / Demo 為**展示情境**、Spike 為**驗證目標**、Tweak 為**變更點**。主要流程範圍界定的是案例設計之範圍，**不增加**依 §CP-4 / §TR-2 須撰寫之測試數量。
 
@@ -214,7 +231,17 @@
   | `amount` | 正數 / 0 / 負數 / 超過上限 | `amount=負數 → 拒絕` |
   | `token` 狀態 | 有效 / 已過期 / 格式錯誤 | `token=已過期 → 401` |
 
-  （涵蓋準則：Each Choice；邊界值列於各特徵之 blocks 中）
+  （涵蓋準則：Base Choice，base＝`amount`=正數、`token`=有效；邊界值列於各特徵之 blocks 中）
+
+  關鍵資料處理流程之疊加示例（關鍵資料處理流程：是——變更權限）：
+
+  | 特徵 | 有效 blocks | 無效 blocks |
+  |------|------------|------------|
+  | `角色` | 管理員 / 一般 | 未登入 |
+  | `動作` | 新增 / 修改 | — |
+  | `目標狀態` | 啟用 / 停用 | — |
+
+  （涵蓋準則：Base Choice＋Pairwise，base＝管理員 / 新增 / 啟用。Pairwise 對有效 blocks 產生 4 例（全組合為 8 例）；Base Choice 為 base＋每個非 base block 各變動一次共 5 例，其中 `角色=未登入` 為唯一無效案例；兩者聯集、重複者合併）
 
 - 本條規範**案例設計方法**；測試類型組合見 §TR-2，驗收條件對應見 §TR-1。
 
@@ -297,6 +324,8 @@
 | 核心邏輯單元測試案例以 ISP 設計（方法）| MUST | MUST | SHOULD | SHOULD | §TR-7 |
 | （若撰寫）驗收測試案例以 ISP 設計（方法）² | SHOULD | SHOULD | SHOULD | SHOULD | §TR-7 |
 | ISP 涵蓋範圍³ | 完整 | 完整 | 完整 | 主要流程 | §TR-7 |
+| 關鍵資料處理流程之有效 blocks 以 Pairwise 組合：單元層⁴ | MUST | SHOULD | MAY | — | §TR-7 |
+| 關鍵資料處理流程之有效 blocks 以 Pairwise 組合：整合層⁴ | SHOULD | SHOULD | MAY | — | §TR-7 |
 | 測試預期結果以 spec 為據（oracle；單元與驗收層）| MUST | SHOULD | SHOULD | MAY | §TR-7 |
 | Mutation testing 驗證測試品質（週期性；限有成熟工具之語言）| SHOULD | SHOULD | MAY | — | §TR-2 |
 | 變更影響範圍宣告 | SHOULD | SHOULD | MAY | MAY | §TR-8 |
@@ -327,5 +356,7 @@
 > ² 僅規範已撰寫之驗收層測試如何設計；是否須撰寫依 §TR-1 / §TR-2（Experimental 可僅以 PR 描述驗收）。
 >
 > ³ 此列值為**涵蓋範圍**而非強制程度；「完整」與「主要流程」之定義見 §TR-7。
+>
+> ⁴ 關鍵資料之資料範圍同 §TR-5，但不限後端；無效 blocks 不納入 Pairwise，仍依 Base Choice 一次一個；E2E 層不建議採 Pairwise。
 
 **所有分級的最低必要閘門**（對應核心原則）：可追溯 spec / 需求來源（§CP-1）、無機密進版控（§CP-2）、經人為核准審查（§CP-5）。Critical / Standard 另須通過上表對應之 MUST 項。

@@ -1,6 +1,6 @@
 # 團隊技術標準建議（Tech Standards）
 
-> 版本：1.3.2｜性質：**建議參考**，非強制憲章。
+> 版本：1.4.0｜性質：**建議參考**，非強制憲章。
 >
 > 本文件提供團隊預設的技術選型建議，協助新專案快速取得一致、可維護的技術基礎。
 > 與 [`constitution.md`](constitution.md) 等憲章不同，本文件條目為 **SHOULD（建議）**——
@@ -160,6 +160,7 @@ envsubst < /usr/share/nginx/html/json/config.json.template > /usr/share/nginx/ht
 | 目的 | 建議工具 | 說明 |
 |------|---------|------|
 | Property-Based Testing（PBT）| **fast-check**（Jest / Vitest 生態）| ISP 每個 block 只取一個代表值；PBT 在 block 內隨機採樣並自動縮小反例，兩者**互補而非替代**。適合有明確不變量的邏輯（如「回傳長度 ≤ 上限」）|
+| Pairwise 組合產生 | **PICT**（Microsoft，CLI、語言無關）；Python 可用 `allpairspy` | 依 §TR-7 對關鍵資料處理流程之**有效 blocks** 產生兩兩組合；模型檔（含排除不可行組合之約束）與分割表一併納入版控。無效 blocks 不放入模型，另依 Base Choice 逐一撰寫 |
 | Mutation testing | **Stryker**（依測試框架選 `@stryker-mutator/vitest-runner` / `jest-runner`；Python 可用 `mutmut`）| mutation score 衡量測試「殺得死錯誤」的能力，較覆蓋率更能反映斷言品質（見 §TR-2）|
 
 建議工作流：跑 coverage 找**漏測**的程式區域 → 跑 mutation testing 找**弱斷言** → 將存活的 mutants 作為補強測試的具體目標，迭代至收斂。以 AI agent 產生測試時，存活 mutants 是比「提高測試品質」更有效的具體回饋。
